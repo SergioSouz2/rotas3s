@@ -2,15 +2,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+import { CadastroEmpresaHeader } from "@/components/empresas/cadastro/CadastroEmpresaHeader";
+import { CnpjSection } from "@/components/empresas/cadastro/CnpjSection";
+import { DadosEmpresaSection } from "@/components/empresas/cadastro/DadosEmpresaSection";
+import { EnderecoSection } from "@/components/empresas/cadastro/EnderecoSection";
+import { LocalizacaoSection } from "@/components/empresas/cadastro/LocalizacaoSection";
+import { ObservacoesSection } from "@/components/empresas/cadastro/ObservacoesSection";
 
 import { styles } from "./styles";
 
@@ -54,137 +60,37 @@ export function CadastroEmpresaScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.voltar} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={23} color="#ffffff" />
-          </TouchableOpacity>
-
-          <View style={styles.headerTextos}>
-            <Text style={styles.headerTitulo}>Nova empresa</Text>
-            <Text style={styles.headerSubtitulo}>
-              Cadastre um novo ponto de entrega
-            </Text>
-          </View>
-        </View>
+        <CadastroEmpresaHeader onVoltar={() => router.back()} />
 
         <View style={styles.body}>
-          <View style={styles.card}>
-            <Text style={styles.secaoTitulo}>Identificação da empresa</Text>
-            <Text style={styles.secaoDescricao}>
-              Informe o CNPJ para consultar os dados oficiais.
-            </Text>
+          <CnpjSection
+            cnpj={cnpj}
+            onChangeCnpj={setCnpj}
+            onBuscarCnpj={handleBuscarCnpj}
+          />
 
-            <Text style={styles.label}>CNPJ</Text>
-            <TextInput
-              style={styles.input}
-              value={cnpj}
-              onChangeText={setCnpj}
-              placeholder="00.000.000/0000-00"
-              placeholderTextColor="#94a3b8"
-              keyboardType="numeric"
-              maxLength={18}
-            />
+          <DadosEmpresaSection
+            razaoSocial={razaoSocial}
+            nomeFantasia={nomeFantasia}
+            telefone={telefone}
+            onChangeRazaoSocial={setRazaoSocial}
+            onChangeNomeFantasia={setNomeFantasia}
+            onChangeTelefone={setTelefone}
+          />
 
-            <TouchableOpacity
-              style={styles.botaoBuscar}
-              onPress={handleBuscarCnpj}
-            >
-              <Ionicons name="search-outline" size={19} color="#ffffff" />
-              <Text style={styles.botaoBuscarTexto}>Buscar dados oficiais</Text>
-            </TouchableOpacity>
-          </View>
+          <EnderecoSection
+            enderecoCadastral={enderecoCadastral}
+            enderecoEntrega={enderecoEntrega}
+            onChangeEnderecoCadastral={setEnderecoCadastral}
+            onChangeEnderecoEntrega={setEnderecoEntrega}
+          />
 
-          <View style={styles.card}>
-            <Text style={styles.secaoTitulo}>Dados da empresa</Text>
+          <LocalizacaoSection onAtualizarLocalizacao={handleLocalizacao} />
 
-            <Text style={styles.label}>Razão social</Text>
-            <TextInput
-              style={styles.input}
-              value={razaoSocial}
-              onChangeText={setRazaoSocial}
-              placeholder="Razão social"
-              placeholderTextColor="#94a3b8"
-            />
-
-            <Text style={styles.label}>Nome fantasia</Text>
-            <TextInput
-              style={styles.input}
-              value={nomeFantasia}
-              onChangeText={setNomeFantasia}
-              placeholder="Nome da empresa"
-              placeholderTextColor="#94a3b8"
-            />
-
-            <Text style={styles.label}>Telefone</Text>
-            <TextInput
-              style={styles.input}
-              value={telefone}
-              onChangeText={setTelefone}
-              placeholder="(00) 00000-0000"
-              placeholderTextColor="#94a3b8"
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.secaoTitulo}>Endereços</Text>
-
-            <Text style={styles.label}>Endereço cadastral</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              value={enderecoCadastral}
-              onChangeText={setEnderecoCadastral}
-              placeholder="Endereço registrado no CNPJ"
-              placeholderTextColor="#94a3b8"
-              multiline
-            />
-
-            <Text style={styles.label}>Endereço de entrega</Text>
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              value={enderecoEntrega}
-              onChangeText={setEnderecoEntrega}
-              placeholder="Local onde a entrega será realizada"
-              placeholderTextColor="#94a3b8"
-              multiline
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.secaoTitulo}>Localização da entrega</Text>
-            <Text style={styles.secaoDescricao}>
-              Confirme o ponto de entrega para facilitar a navegação.
-            </Text>
-
-            <View style={styles.mapaPlaceholder}>
-              <Ionicons name="map-outline" size={40} color="#64748b" />
-              <Text style={styles.mapaTexto}>Prévia do mapa</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.botaoLocalizacao}
-              onPress={handleLocalizacao}
-            >
-              <Ionicons name="locate-outline" size={20} color="#102f63" />
-              <Text style={styles.botaoLocalizacaoTexto}>
-                Atualizar localização pelo GPS
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.secaoTitulo}>Observações</Text>
-
-            <TextInput
-              style={[styles.input, styles.observacoes]}
-              value={observacoes}
-              onChangeText={setObservacoes}
-              placeholder="Referências, entrada de carga, horários..."
-              placeholderTextColor="#94a3b8"
-              multiline
-              textAlignVertical="top"
-            />
-          </View>
+          <ObservacoesSection
+            observacoes={observacoes}
+            onChangeObservacoes={setObservacoes}
+          />
 
           <TouchableOpacity style={styles.botaoSalvar} onPress={handleSalvar}>
             <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
