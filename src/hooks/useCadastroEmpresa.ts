@@ -1,12 +1,21 @@
 import { consultarCnpj } from "@/services/cnpjService";
 import {
+    Coordenadas,
+    localizarPorEndereco,
+} from "@/services/localizacaoService";
+
+import {
     formatarCnpj,
     formatarTelefone,
     somenteNumeros,
     validarCnpj,
 } from "@/utils/cnpj/cnpj";
+
+import * as Location from "expo-location";
 import { useRef, useState } from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
+
+type OrigemLocalizacao = "automatica" | "gps" | "manual";
 
 export function useCadastroEmpresa() {
   // Identificação
@@ -24,15 +33,33 @@ export function useCadastroEmpresa() {
   // Informações adicionais
   const [observacoes, setObservacoes] = useState("");
 
-  // Controle da consulta
+  // Estados da consulta
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
+  const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
 
-  // Identifica consultas antigas
+  // Localização
+  const [coordenadas, setCoordenadas] = useState<Coordenadas | null>(null);
+
+  const [origemLocalizacao, setOrigemLocalizacao] =
+    useState<OrigemLocalizacao | null>(null);
+
+  const [localizacaoNaoEncontrada, setLocalizacaoNaoEncontrada] =
+    useState(false);
+
+  // Controle de respostas antigas
   const versaoCnpj = useRef(0);
-  const consultaEmAndamento = useRef(false);
+  const versaoEndereco = useRef(0);
 
-  // Controla o endereço de entrega preenchido manualmente
+  const consultaEmAndamento = useRef(false);
   const enderecoEntregaEditado = useRef(false);
+
+  function invalidarLocalizacao() {
+    versaoEndereco.current += 1;
+
+    setCoordenadas(null);
+    setOrigemLocalizacao(null);
+    setLocalizacaoNaoEncontrada(false);
+  }
 
   function limparDadosEmpresa() {
     setRazaoSocial("");
@@ -43,6 +70,8 @@ export function useCadastroEmpresa() {
     setObservacoes("");
 
     enderecoEntregaEditado.current = false;
+
+    invalidarLocalizacao();
   }
 
   function atualizarCnpj(valor: string) {
@@ -52,12 +81,9 @@ export function useCadastroEmpresa() {
       return;
     }
 
-    // Invalida qualquer consulta anterior.
     versaoCnpj.current += 1;
 
     setCnpj(novoCnpj);
-
-    // Evita misturar dados de empresas diferentes.
     limparDadosEmpresa();
   }
 
@@ -67,7 +93,63 @@ export function useCadastroEmpresa() {
 
   function atualizarEnderecoEntrega(valor: string) {
     enderecoEntregaEditado.current = true;
+
     setEnderecoEntrega(valor);
+    invalidarLocalizacao();
+  }
+
+  async function buscarLocalizacaoAutomatica(
+    endereco: string,
+    versaoConsultaCnpj: number,
+  ) {
+    const versaoConsultaEndereco = versaoEndereco.current;
+
+    setBuscandoLocalizacao(true);
+    setLocalizacaoNaoEncontrada(false);
+
+    try {
+      // Android pode exigir permissão para geocodificação.
+      if (Platform.OS === "android") {
+        const permissao = await Location.requestForegroundPermissionsAsync();
+
+        if (permissao.status !== "granted") {
+          throw new Error("PERMISSAO_NEGADA");
+        }
+      }
+
+      if (
+        versaoConsultaCnpj !== versaoCnpj.current ||
+        versaoConsultaEndereco !== versaoEndereco.current
+      ) {
+        return;
+      }
+
+      const resultado = await localizarPorEndereco(endereco);
+
+      if (
+        versaoConsultaCnpj !== versaoCnpj.current ||
+        versaoConsultaEndereco !== versaoEndereco.current
+      ) {
+        return;
+      }
+
+      setCoordenadas(resultado);
+      setOrigemLocalizacao("automatica");
+      setLocalizacaoNaoEncontrada(false);
+    } catch {
+      if (
+        versaoConsultaCnpj !== versaoCnpj.current ||
+        versaoConsultaEndereco !== versaoEndereco.current
+      ) {
+        return;
+      }
+
+      setCoordenadas(null);
+      setOrigemLocalizacao(null);
+      setLocalizacaoNaoEncontrada(true);
+    } finally {
+      setBuscandoLocalizacao(false);
+    }
   }
 
   async function buscarCnpj() {
@@ -91,21 +173,35 @@ export function useCadastroEmpresa() {
     try {
       const dados = await consultarCnpj(cnpj);
 
-      // Ignora o resultado se o CNPJ foi alterado
-      // enquanto a consulta estava em andamento.
       if (versaoConsulta !== versaoCnpj.current) {
         return;
       }
 
+      // Preenche dados oficiais
       setRazaoSocial(dados.razaoSocial);
       setNomeFantasia(dados.nomeFantasia);
       setTelefone(dados.telefone);
       setEnderecoCadastral(dados.enderecoCadastral);
 
-      // Preenche automaticamente apenas quando o motorista
-      // ainda não editou o endereço de entrega.
+      // Só preenche automaticamente se o motorista
+      // ainda não personalizou o endereço.
       if (!enderecoEntregaEditado.current) {
         setEnderecoEntrega(dados.enderecoCadastral);
+        invalidarLocalizacao();
+      }
+
+      // Localiza o endereço de entrega escolhido.
+      const enderecoParaLocalizar = enderecoEntregaEditado.current
+        ? enderecoEntrega
+        : dados.enderecoCadastral;
+
+      if (enderecoParaLocalizar.trim()) {
+        await buscarLocalizacaoAutomatica(
+          enderecoParaLocalizar,
+          versaoConsulta,
+        );
+      } else {
+        setLocalizacaoNaoEncontrada(true);
       }
     } catch (erro) {
       if (versaoConsulta !== versaoCnpj.current) {
@@ -126,15 +222,15 @@ export function useCadastroEmpresa() {
 
   function atualizarLocalizacao() {
     Alert.alert(
-      "Localização",
-      "A localização pelo endereço e GPS será implementada na próxima etapa.",
+      "Atualizar localização",
+      "A correção pelo GPS será utilizada quando o motorista chegar ao ponto de entrega.",
     );
   }
 
   function salvarEmpresa() {
     Alert.alert(
       "Cadastro de empresa",
-      "O salvamento no SQLite será implementado posteriormente.",
+      "O salvamento no SQLite será implementado na próxima etapa.",
     );
   }
 
@@ -147,7 +243,15 @@ export function useCadastroEmpresa() {
     enderecoCadastral,
     enderecoEntrega,
     observacoes,
+
+    // Estados de carregamento
     buscandoCnpj,
+    buscandoLocalizacao,
+
+    // Localização
+    coordenadas,
+    origemLocalizacao,
+    localizacaoNaoEncontrada,
 
     // Atualização
     setCnpj: atualizarCnpj,

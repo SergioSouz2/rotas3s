@@ -42,6 +42,11 @@ export function CadastroEmpresaScreen() {
     buscarCnpj,
     atualizarLocalizacao,
     salvarEmpresa,
+
+    coordenadas,
+    origemLocalizacao,
+    buscandoLocalizacao,
+    localizacaoNaoEncontrada,
   } = useCadastroEmpresa();
 
   return (
@@ -80,7 +85,13 @@ export function CadastroEmpresaScreen() {
             onChangeEnderecoEntrega={setEnderecoEntrega}
           />
 
-          <LocalizacaoSection onAtualizarLocalizacao={atualizarLocalizacao} />
+          <LocalizacaoSection
+            coordenadas={coordenadas}
+            origemLocalizacao={origemLocalizacao}
+            buscandoLocalizacao={buscandoLocalizacao}
+            localizacaoNaoEncontrada={localizacaoNaoEncontrada}
+            onAtualizarLocalizacao={atualizarLocalizacao}
+          />
 
           <ObservacoesSection
             observacoes={observacoes}

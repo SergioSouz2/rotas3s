@@ -43,9 +43,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "O 3S Rotas usa sua localização para registrar onde cada entrega foi feita."
+          "locationWhenInUsePermission": "O 3S Rotas utiliza sua localização para confirmar e corrigir pontos de entrega."
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,
