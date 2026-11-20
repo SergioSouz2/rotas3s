@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
+
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -22,7 +24,7 @@ import { useCadastroEmpresa } from "@/hooks/useCadastroEmpresa";
 import { styles } from "./styles";
 
 export function CadastroEmpresaScreen() {
-  // Controla a rolagem da tela durante a edição do mapa.
+  // Controla a rolagem durante a edição do mapa.
   const [editandoMapa, setEditandoMapa] = useState(false);
 
   const {
@@ -33,7 +35,10 @@ export function CadastroEmpresaScreen() {
     enderecoCadastral,
     enderecoEntrega,
     observacoes,
+
     buscandoCnpj,
+    buscandoLocalizacao,
+    salvando,
 
     setCnpj,
     setRazaoSocial,
@@ -50,7 +55,6 @@ export function CadastroEmpresaScreen() {
 
     coordenadas,
     origemLocalizacao,
-    buscandoLocalizacao,
     localizacaoNaoEncontrada,
   } = useCadastroEmpresa();
 
@@ -107,17 +111,24 @@ export function CadastroEmpresaScreen() {
           />
 
           <TouchableOpacity
-            style={styles.botaoSalvar}
+            style={[styles.botaoSalvar, salvando && { opacity: 0.6 }]}
             onPress={salvarEmpresa}
+            disabled={salvando || editandoMapa}
             activeOpacity={0.8}
           >
-            <Ionicons
-              name="checkmark-circle-outline"
-              size={22}
-              color="#ffffff"
-            />
+            {salvando ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={22}
+                color="#ffffff"
+              />
+            )}
 
-            <Text style={styles.botaoSalvarTexto}>Salvar empresa</Text>
+            <Text style={styles.botaoSalvarTexto}>
+              {salvando ? "Salvando empresa..." : "Salvar empresa"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

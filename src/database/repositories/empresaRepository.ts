@@ -11,13 +11,28 @@ type OrigemLocalizacao = NonNullable<NovaEmpresa["origemLocalizacao"]>;
 
 export const empresaRepository = {
   // Cadastrar empresa
-  async create(dados: Omit<NovaEmpresa, "id" | "criadoEm">) {
+  async create(
+    dados: Omit<NovaEmpresa, "id" | "criadoEm" | "atualizadoEm" | "deletedAt">,
+  ) {
+    const cnpjLimpo = dados.cnpj.replace(/\D/g, "");
+
+    const [empresaExistente] = await db
+      .select({ id: empresas.id })
+      .from(empresas)
+      .where(eq(empresas.cnpj, cnpjLimpo))
+      .limit(1);
+
+    if (empresaExistente) {
+      throw new Error("CNPJ_JA_CADASTRADO");
+    }
+
     const agora = new Date().toISOString();
 
     const [empresa] = await db
       .insert(empresas)
       .values({
         ...dados,
+        cnpj: cnpjLimpo,
         criadoEm: agora,
         atualizadoEm: agora,
         deletedAt: null,

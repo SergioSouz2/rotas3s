@@ -1,3 +1,4 @@
+import { empresaRepository } from "@/database/repositories/empresaRepository";
 import { consultarCnpj } from "@/services/cnpjService";
 
 import {
@@ -14,12 +15,15 @@ import {
 } from "@/utils/cnpj/cnpj";
 
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Alert, Platform } from "react-native";
 
 type OrigemLocalizacao = "automatica" | "gps" | "manual";
 
 export function useCadastroEmpresa() {
+  const router = useRouter();
+
   // Identificação
   const [cnpj, setCnpj] = useState("");
 
@@ -30,16 +34,15 @@ export function useCadastroEmpresa() {
 
   // Endereços
   const [enderecoCadastral, setEnderecoCadastral] = useState("");
-
   const [enderecoEntrega, setEnderecoEntrega] = useState("");
 
   // Informações adicionais
   const [observacoes, setObservacoes] = useState("");
 
-  // Estados da consulta
+  // Estados de carregamento
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
-
   const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   // Localização
   const [coordenadas, setCoordenadas] = useState<Coordenadas | null>(null);
@@ -57,10 +60,9 @@ export function useCadastroEmpresa() {
   const consultaEmAndamento = useRef(false);
   const enderecoEntregaEditado = useRef(false);
 
-  // Impede solicitações de GPS simultâneas.
   const gpsEmAndamento = useRef(false);
+  const salvamentoEmAndamento = useRef(false);
 
-  // Controla qual operação está atualizando a localização.
   const versaoOperacaoLocalizacao = useRef(0);
 
   function invalidarLocalizacao() {
@@ -235,7 +237,6 @@ export function useCadastroEmpresa() {
     const versaoConsultaCnpj = versaoCnpj.current;
     const versaoConsultaEndereco = versaoEndereco.current;
 
-    // Invalida operações automáticas anteriores.
     const versaoOperacao = ++versaoOperacaoLocalizacao.current;
 
     setBuscandoLocalizacao(true);
@@ -243,8 +244,6 @@ export function useCadastroEmpresa() {
     try {
       const resultado = await localizarPorGps();
 
-      // Ignora o resultado se o usuário alterou
-      // o CNPJ ou o endereço durante a busca.
       if (
         versaoConsultaCnpj !== versaoCnpj.current ||
         versaoConsultaEndereco !== versaoEndereco.current ||
@@ -270,7 +269,6 @@ export function useCadastroEmpresa() {
         return;
       }
 
-      // Preserva as coordenadas anteriores.
       Alert.alert(
         "Não foi possível atualizar",
         erro instanceof Error
@@ -294,11 +292,97 @@ export function useCadastroEmpresa() {
     setLocalizacaoNaoEncontrada(false);
   }
 
-  function salvarEmpresa() {
-    Alert.alert(
-      "Cadastro de empresa",
-      "O salvamento no SQLite será implementado na próxima etapa.",
-    );
+  async function salvarEmpresa() {
+    if (salvamentoEmAndamento.current) {
+      return;
+    }
+
+    if (!validarCnpj(cnpj)) {
+      Alert.alert(
+        "CNPJ inválido",
+        "Informe um CNPJ válido para cadastrar a empresa.",
+      );
+      return;
+    }
+
+    if (!razaoSocial.trim()) {
+      Alert.alert("Campo obrigatório", "Informe a razão social da empresa.");
+      return;
+    }
+
+    if (!enderecoEntrega.trim()) {
+      Alert.alert("Campo obrigatório", "Informe o endereço de entrega.");
+      return;
+    }
+
+    if (
+      buscandoCnpj ||
+      buscandoLocalizacao ||
+      consultaEmAndamento.current ||
+      gpsEmAndamento.current
+    ) {
+      Alert.alert("Aguarde", "Espere a consulta e a localização terminarem.");
+      return;
+    }
+
+    if (!coordenadas) {
+      Alert.alert(
+        "Localização obrigatória",
+        "Localize o ponto de entrega pelo endereço ou GPS antes de salvar.",
+      );
+      return;
+    }
+
+    salvamentoEmAndamento.current = true;
+    setSalvando(true);
+
+    try {
+      const cnpjLimpo = somenteNumeros(cnpj);
+      const agora = new Date().toISOString();
+
+      // Usa o nome fantasia como nome de exibição.
+      // Caso esteja vazio, utiliza a razão social.
+      const nomeExibicao = nomeFantasia.trim() || razaoSocial.trim();
+
+      await empresaRepository.create({
+        nome: nomeExibicao,
+        cnpj: cnpjLimpo,
+        razaoSocial: razaoSocial.trim(),
+        nomeFantasia: nomeFantasia.trim(),
+        telefone: somenteNumeros(telefone),
+        endereco: enderecoEntrega.trim(),
+        enderecoCadastral: enderecoCadastral.trim(),
+        observacoes: observacoes.trim(),
+        latitude: coordenadas.latitude,
+        longitude: coordenadas.longitude,
+        origemLocalizacao: origemLocalizacao,
+        localizacaoAtualizadaEm: agora,
+      });
+
+      Alert.alert("Empresa cadastrada", "A empresa foi salva com sucesso!", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (erro) {
+      console.error("Erro ao salvar empresa:", erro);
+
+      const mensagem = erro instanceof Error ? erro.message : "";
+
+      const duplicado =
+        mensagem === "CNPJ_JA_CADASTRADO" || /unique|duplicate/i.test(mensagem);
+
+      Alert.alert(
+        duplicado ? "Empresa já cadastrada" : "Erro ao salvar empresa",
+        duplicado
+          ? "Já existe uma empresa cadastrada com este CNPJ."
+          : "Não foi possível salvar a empresa no SQLite.",
+      );
+    } finally {
+      salvamentoEmAndamento.current = false;
+      setSalvando(false);
+    }
   }
 
   return {
@@ -314,6 +398,7 @@ export function useCadastroEmpresa() {
     // Estados de carregamento
     buscandoCnpj,
     buscandoLocalizacao,
+    salvando,
 
     // Localização
     coordenadas,
