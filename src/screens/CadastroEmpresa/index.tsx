@@ -1,8 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -18,37 +16,33 @@ import { EnderecoSection } from "@/components/empresas/cadastro/EnderecoSection"
 import { LocalizacaoSection } from "@/components/empresas/cadastro/LocalizacaoSection";
 import { ObservacoesSection } from "@/components/empresas/cadastro/ObservacoesSection";
 
+import { useCadastroEmpresa } from "@/hooks/useCadastroEmpresa";
+
 import { styles } from "./styles";
 
 export function CadastroEmpresaScreen() {
-  const [cnpj, setCnpj] = useState("");
-  const [razaoSocial, setRazaoSocial] = useState("");
-  const [nomeFantasia, setNomeFantasia] = useState("");
-  const [telefone, setTelefone] = useState("");
-  const [enderecoCadastral, setEnderecoCadastral] = useState("");
-  const [enderecoEntrega, setEnderecoEntrega] = useState("");
-  const [observacoes, setObservacoes] = useState("");
+  const {
+    cnpj,
+    razaoSocial,
+    nomeFantasia,
+    telefone,
+    enderecoCadastral,
+    enderecoEntrega,
+    observacoes,
+    buscandoCnpj,
 
-  function handleBuscarCnpj() {
-    Alert.alert(
-      "Consulta de CNPJ",
-      "A busca dos dados oficiais será implementada na próxima etapa.",
-    );
-  }
+    setCnpj,
+    setRazaoSocial,
+    setNomeFantasia,
+    setTelefone,
+    setEnderecoCadastral,
+    setEnderecoEntrega,
+    setObservacoes,
 
-  function handleLocalizacao() {
-    Alert.alert(
-      "Localização",
-      "A localização pelo GPS e o mapa serão implementados posteriormente.",
-    );
-  }
-
-  function handleSalvar() {
-    Alert.alert(
-      "Cadastro de empresa",
-      "A interface está pronta para testes. O salvamento no SQLite será implementado depois.",
-    );
-  }
+    buscarCnpj,
+    atualizarLocalizacao,
+    salvarEmpresa,
+  } = useCadastroEmpresa();
 
   return (
     <KeyboardAvoidingView
@@ -65,8 +59,9 @@ export function CadastroEmpresaScreen() {
         <View style={styles.body}>
           <CnpjSection
             cnpj={cnpj}
+            buscandoCnpj={buscandoCnpj}
             onChangeCnpj={setCnpj}
-            onBuscarCnpj={handleBuscarCnpj}
+            onBuscarCnpj={buscarCnpj}
           />
 
           <DadosEmpresaSection
@@ -85,15 +80,24 @@ export function CadastroEmpresaScreen() {
             onChangeEnderecoEntrega={setEnderecoEntrega}
           />
 
-          <LocalizacaoSection onAtualizarLocalizacao={handleLocalizacao} />
+          <LocalizacaoSection onAtualizarLocalizacao={atualizarLocalizacao} />
 
           <ObservacoesSection
             observacoes={observacoes}
             onChangeObservacoes={setObservacoes}
           />
 
-          <TouchableOpacity style={styles.botaoSalvar} onPress={handleSalvar}>
-            <Ionicons name="checkmark-circle-outline" size={22} color="#fff" />
+          <TouchableOpacity
+            style={styles.botaoSalvar}
+            onPress={salvarEmpresa}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name="checkmark-circle-outline"
+              size={22}
+              color="#ffffff"
+            />
+
             <Text style={styles.botaoSalvarTexto}>Salvar empresa</Text>
           </TouchableOpacity>
         </View>
