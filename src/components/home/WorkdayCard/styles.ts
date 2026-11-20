@@ -56,4 +56,48 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
+
+  footer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 12,
+    gap: 8,
+  },
+
+  status: {
+    flex: 1,
+  },
+
+  statusAberto: {},
+  statusFinalizado: {},
+
+  statusText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#166534",
+  },
+
+  button: {
+    backgroundColor: "#15803d",
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    minWidth: 110,
+    alignItems: "center",
+  },
+
+  buttonFinalizar: {
+    backgroundColor: "#dc2626",
+  },
+
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "700",
+  },
 });

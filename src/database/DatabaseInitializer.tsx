@@ -22,8 +22,11 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
 
     let ativo = true;
 
+    // Inicialização padrão do banco de dados
     async function inicializarDados() {
       try {
+        // Executa o seed somente quando necessário.
+        // O próprio seed verifica se os dados já existem.
         await seedDatabase();
 
         if (ativo) {
@@ -49,6 +52,7 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
     };
   }, [success]);
 
+  // Exibe erros de migrations ou inicialização
   if (error || seedErro) {
     return (
       <View
@@ -59,7 +63,12 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
           gap: 8,
         }}
       >
-        <Text style={{ fontWeight: "bold", fontSize: 18 }}>
+        <Text
+          style={{
+            fontWeight: "bold",
+            fontSize: 18,
+          }}
+        >
           Erro ao inicializar banco de dados
         </Text>
 
@@ -68,6 +77,7 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
     );
   }
 
+  // Aguarda as migrations e o seed terminarem
   if (!success || !seedConcluido) {
     return (
       <View
@@ -79,10 +89,12 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
         }}
       >
         <ActivityIndicator size="large" />
+
         <Text>Preparando banco de dados...</Text>
       </View>
     );
   }
 
+  // Banco pronto: libera a renderização do aplicativo
   return <>{children}</>;
 }

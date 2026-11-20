@@ -1,12 +1,25 @@
 import { eq } from "drizzle-orm";
+
 import { db } from "../client";
 import { diasTrabalho } from "../schema/diasTrabalho";
 import { empresas } from "../schema/empresas";
 import { entregas } from "../schema/entregas";
 import { usuarios } from "../schema/usuario";
 
+function obterDataDiasAtras(diasAtras: number): string {
+  const data = new Date();
+
+  data.setHours(12, 0, 0, 0);
+  data.setDate(data.getDate() - diasAtras);
+
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 export async function seedDatabase() {
-  // Evita cadastrar os dados fictícios novamente
   const usuarioExistente = await db
     .select({ id: usuarios.id })
     .from(usuarios)
@@ -19,7 +32,7 @@ export async function seedDatabase() {
   }
 
   await db.transaction(async (tx) => {
-    // 1. Cadastrar usuário
+    // 1. Cadastrar usuário fictício
     const [usuario] = await tx
       .insert(usuarios)
       .values({
@@ -72,16 +85,10 @@ export async function seedDatabase() {
       ])
       .returning({ id: empresas.id });
 
-    // 3. Criar cinco dias de trabalho
-    const datas = [
-      "2026-11-16",
-      "2026-11-17",
-      "2026-11-18",
-      "2026-11-19",
-      "2026-11-20",
-    ];
+    // 3. Criar jornadas nos cinco dias anteriores
+    for (let diasAtras = 5; diasAtras >= 1; diasAtras--) {
+      const data = obterDataDiasAtras(diasAtras);
 
-    for (const data of datas) {
       const [dia] = await tx
         .insert(diasTrabalho)
         .values({
@@ -94,7 +101,7 @@ export async function seedDatabase() {
         })
         .returning({ id: diasTrabalho.id });
 
-      // 4. Criar cinco entregas para cada dia
+      // 4. Criar cinco entregas por jornada
       for (let i = 0; i < empresasCriadas.length; i++) {
         const hora = String(9 + i).padStart(2, "0");
 
@@ -109,5 +116,7 @@ export async function seedDatabase() {
     }
   });
 
-  console.log("[SEED] 36 registros fictícios cadastrados com sucesso.");
+  console.log(
+    "[SEED] 36 registros fictícios cadastrados nos cinco dias anteriores.",
+  );
 }
