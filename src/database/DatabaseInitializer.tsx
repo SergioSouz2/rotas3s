@@ -30,13 +30,13 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
           setSeedConcluido(true);
         }
       } catch (erro) {
-        console.error("[DATABASE] Erro no Seed:", erro);
+        console.error("[DATABASE] Erro na inicialização:", erro);
 
         if (ativo) {
           setSeedErro(
             erro instanceof Error
               ? erro.message
-              : "Erro desconhecido ao cadastrar os dados.",
+              : "Erro desconhecido ao inicializar o banco.",
           );
         }
       }
@@ -59,12 +59,7 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
           gap: 8,
         }}
       >
-        <Text
-          style={{
-            fontWeight: "bold",
-            fontSize: 18,
-          }}
-        >
+        <Text style={{ fontWeight: "bold", fontSize: 18 }}>
           Erro ao inicializar banco de dados
         </Text>
 
@@ -84,7 +79,6 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
         }}
       >
         <ActivityIndicator size="large" />
-
         <Text>Preparando banco de dados...</Text>
       </View>
     );
