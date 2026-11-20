@@ -7,7 +7,9 @@ import { NextDeliveryCard } from "@/components/home/NextDeliveryCard";
 import { WelcomeCard } from "@/components/home/WelcomeCard";
 import { WorkdayCard } from "@/components/home/WorkdayCard";
 
+import { useEntregasStats } from "@/hooks/useEntregasStats";
 import { useHomeData } from "@/hooks/useHomeData";
+
 import { styles } from "./styles";
 
 function formatarData(data: string): string {
@@ -50,19 +52,13 @@ export function HomeScreen() {
     finalizarJornada,
   } = useHomeData();
 
-  if (carregando) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={{ marginTop: 12 }}>Carregando informações...</Text>
-      </View>
-    );
-  }
+  // Estatísticas reais das entregas da jornada
+  const {
+    total,
+    realizadas,
+    pendentes,
+    erro: erroEntregas,
+  } = useEntregasStats(diaTrabalho?.id);
 
   const status: "nao_iniciada" | "aberto" | "finalizado" =
     diaTrabalho?.status === "aberto"
@@ -70,6 +66,24 @@ export function HomeScreen() {
       : diaTrabalho?.status === "finalizado"
         ? "finalizado"
         : "nao_iniciada";
+
+  if (carregando) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            justifyContent: "center",
+            alignItems: "center",
+          },
+        ]}
+      >
+        <ActivityIndicator size="large" color="#2563eb" />
+
+        <Text style={{ marginTop: 12 }}>Carregando informações...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -81,6 +95,10 @@ export function HomeScreen() {
 
         <View style={styles.body}>
           {erro && <Text style={{ color: "#dc2626" }}>{erro}</Text>}
+
+          {erroEntregas && (
+            <Text style={{ color: "#dc2626" }}>{erroEntregas}</Text>
+          )}
 
           <WelcomeCard
             nome={usuario?.nome ?? "Motorista"}
@@ -99,9 +117,14 @@ export function HomeScreen() {
             onFinalizar={finalizarJornada}
           />
 
-          {/* Estatísticas temporárias */}
-          <DeliveryStats total={5} realizadas={2} pendentes={3} />
+          {/* Estatísticas reais do SQLite */}
+          <DeliveryStats
+            total={total}
+            realizadas={realizadas}
+            pendentes={pendentes}
+          />
 
+          {/* Próxima entrega: integração futura */}
           <NextDeliveryCard
             empresa="Supermercado Central"
             endereco="Av. Brasil, 1250 - Centro"
