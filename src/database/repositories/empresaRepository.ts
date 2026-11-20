@@ -3,15 +3,23 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "../client";
 import { empresas, type NovaEmpresa } from "../schema/empresas";
 
+type AtualizarEmpresa = Partial<
+  Omit<NovaEmpresa, "id" | "criadoEm" | "atualizadoEm" | "deletedAt">
+>;
+
+type OrigemLocalizacao = NonNullable<NovaEmpresa["origemLocalizacao"]>;
+
 export const empresaRepository = {
-  // Cadastrar uma nova empresa
+  // Cadastrar empresa
   async create(dados: Omit<NovaEmpresa, "id" | "criadoEm">) {
+    const agora = new Date().toISOString();
+
     const [empresa] = await db
       .insert(empresas)
       .values({
         ...dados,
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
+        criadoEm: agora,
+        atualizadoEm: agora,
         deletedAt: null,
       })
       .returning();
@@ -19,7 +27,7 @@ export const empresaRepository = {
     return empresa;
   },
 
-  // Listar somente empresas ativas
+  // Listar empresas ativas
   async findAll() {
     return db
       .select()
@@ -28,7 +36,7 @@ export const empresaRepository = {
       .orderBy(asc(empresas.nome));
   },
 
-  // Buscar empresa ativa pelo ID
+  // Buscar empresa pelo ID
   async findById(id: number) {
     const [empresa] = await db
       .select()
@@ -39,24 +47,21 @@ export const empresaRepository = {
     return empresa ?? null;
   },
 
-  // Buscar empresa ativa pelo CNPJ
+  // Buscar empresa pelo CNPJ
   async findByCnpj(cnpj: string) {
+    const cnpjLimpo = cnpj.replace(/\D/g, "");
+
     const [empresa] = await db
       .select()
       .from(empresas)
-      .where(and(eq(empresas.cnpj, cnpj), isNull(empresas.deletedAt)))
+      .where(and(eq(empresas.cnpj, cnpjLimpo), isNull(empresas.deletedAt)))
       .limit(1);
 
     return empresa ?? null;
   },
 
-  // Atualizar uma empresa
-  async update(
-    id: number,
-    dados: Partial<
-      Omit<NovaEmpresa, "id" | "criadoEm" | "atualizadoEm" | "deletedAt">
-    >,
-  ) {
+  // Atualizar dados da empresa
+  async update(id: number, dados: AtualizarEmpresa) {
     const [empresa] = await db
       .update(empresas)
       .set({
@@ -69,13 +74,41 @@ export const empresaRepository = {
     return empresa ?? null;
   },
 
-  // Exclusão lógica: preserva o histórico
-  async delete(id: number) {
+  // Atualizar localização do ponto de entrega
+  async atualizarLocalizacao(
+    id: number,
+    dados: {
+      latitude: number;
+      longitude: number;
+      origem: OrigemLocalizacao;
+    },
+  ) {
+    const agora = new Date().toISOString();
+
     const [empresa] = await db
       .update(empresas)
       .set({
-        deletedAt: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
+        latitude: dados.latitude,
+        longitude: dados.longitude,
+        origemLocalizacao: dados.origem,
+        localizacaoAtualizadaEm: agora,
+        atualizadoEm: agora,
+      })
+      .where(and(eq(empresas.id, id), isNull(empresas.deletedAt)))
+      .returning();
+
+    return empresa ?? null;
+  },
+
+  // Exclusão lógica
+  async delete(id: number) {
+    const agora = new Date().toISOString();
+
+    const [empresa] = await db
+      .update(empresas)
+      .set({
+        deletedAt: agora,
+        atualizadoEm: agora,
       })
       .where(and(eq(empresas.id, id), isNull(empresas.deletedAt)))
       .returning();
