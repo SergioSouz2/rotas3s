@@ -286,6 +286,14 @@ export function useCadastroEmpresa() {
     }
   }
 
+  function confirmarLocalizacaoManual(novaPosicao: Coordenadas) {
+    versaoOperacaoLocalizacao.current += 1;
+
+    setCoordenadas(novaPosicao);
+    setOrigemLocalizacao("manual");
+    setLocalizacaoNaoEncontrada(false);
+  }
+
   function salvarEmpresa() {
     Alert.alert(
       "Cadastro de empresa",
@@ -311,6 +319,7 @@ export function useCadastroEmpresa() {
     coordenadas,
     origemLocalizacao,
     localizacaoNaoEncontrada,
+    confirmarLocalizacaoManual,
 
     // Atualização
     setCnpj: atualizarCnpj,

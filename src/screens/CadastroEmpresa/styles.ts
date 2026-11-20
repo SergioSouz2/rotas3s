@@ -11,25 +11,25 @@ export const styles = StyleSheet.create({
   },
 
   body: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 18,
+    padding: 12,
+    paddingBottom: 24,
+    gap: 10,
   },
 
   botaoSalvar: {
     backgroundColor: "#16a34a",
-    minHeight: 54,
-    borderRadius: 12,
+    minHeight: 46,
+    borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 9,
-    marginBottom: 20,
+    gap: 7,
+    marginBottom: 10,
   },
 
   botaoSalvarTexto: {
     color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

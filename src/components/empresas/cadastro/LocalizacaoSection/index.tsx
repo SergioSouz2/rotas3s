@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { MapaLocalizacao } from "@/components/empresas/cadastro/MapaLocalizacao";
@@ -15,29 +16,62 @@ interface LocalizacaoSectionProps {
   buscandoLocalizacao: boolean;
   localizacaoNaoEncontrada: boolean;
   onAtualizarLocalizacao: () => void;
+  onConfirmarLocalizacaoManual: (coordenadas: Coordenadas) => void;
+  onModoEdicaoChange?: (editando: boolean) => void;
 }
 
 export function LocalizacaoSection({
   coordenadas,
-  origemLocalizacao,
   buscandoLocalizacao,
   localizacaoNaoEncontrada,
   onAtualizarLocalizacao,
+  onConfirmarLocalizacaoManual,
+  onModoEdicaoChange,
 }: LocalizacaoSectionProps) {
-  function obterDescricaoOrigem() {
-    switch (origemLocalizacao) {
-      case "automatica":
-        return "Localização encontrada pelo endereço";
+  const [modoEdicao, setModoEdicao] = useState(false);
 
-      case "gps":
-        return "Localização atualizada pelo GPS";
+  const [posicaoTemporaria, setPosicaoTemporaria] =
+    useState<Coordenadas | null>(null);
 
-      case "manual":
-        return "Localização definida manualmente";
-
-      default:
-        return "Origem não identificada";
+  // Sincroniza a posição temporária quando não está editando.
+  useEffect(() => {
+    if (!modoEdicao) {
+      setPosicaoTemporaria(coordenadas);
     }
+  }, [coordenadas, modoEdicao]);
+
+  function iniciarEdicao() {
+    if (!coordenadas || buscandoLocalizacao) {
+      return;
+    }
+
+    setPosicaoTemporaria(coordenadas);
+    setModoEdicao(true);
+
+    // Impede o ScrollView de capturar os gestos do mapa.
+    onModoEdicaoChange?.(true);
+  }
+
+  function cancelarEdicao() {
+    setModoEdicao(false);
+    setPosicaoTemporaria(null);
+
+    // Libera a rolagem da tela.
+    onModoEdicaoChange?.(false);
+  }
+
+  function confirmarEdicao() {
+    if (!posicaoTemporaria) {
+      return;
+    }
+
+    onConfirmarLocalizacaoManual(posicaoTemporaria);
+
+    setModoEdicao(false);
+    setPosicaoTemporaria(null);
+
+    // Libera a rolagem após confirmar.
+    onModoEdicaoChange?.(false);
   }
 
   return (
@@ -47,42 +81,83 @@ export function LocalizacaoSection({
       </Text>
 
       <Text style={formStyles.secaoDescricao}>
-        Confira no mapa o ponto encontrado automaticamente após consultar o
-        CNPJ.
+        Confira e ajuste a localização do ponto de entrega.
       </Text>
 
       {buscandoLocalizacao ? (
         <View style={styles.mapaPlaceholder}>
           <ActivityIndicator size="large" color="#2563eb" />
 
-          <Text style={styles.mapaTexto}>
-            Buscando localização do endereço...
-          </Text>
+          <Text style={styles.mapaTexto}>Buscando localização...</Text>
         </View>
       ) : coordenadas ? (
         <>
-          <MapaLocalizacao coordenadas={coordenadas} />
+          <MapaLocalizacao
+            coordenadas={coordenadas}
+            modoEdicao={modoEdicao}
+            onAlterarPosicao={setPosicaoTemporaria}
+          />
 
-          <View style={styles.informacoesLocalizacao}>
-            <View style={styles.statusLocalizacao}>
-              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+          {modoEdicao ? (
+            <View style={{ gap: 8, marginTop: 8 }}>
+              <Text style={styles.mapaTexto}>
+                Arraste o mapa para posicionar o marcador na entrada da empresa.
+              </Text>
 
-              <Text style={styles.statusTexto}>{obterDescricaoOrigem()}</Text>
+              <TouchableOpacity
+                style={[
+                  styles.botaoLocalizacao,
+                  {
+                    backgroundColor: "#16a34a",
+                    borderColor: "#16a34a",
+                  },
+                ]}
+                onPress={confirmarEdicao}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={20}
+                  color="#ffffff"
+                />
+
+                <Text
+                  style={{
+                    color: "#ffffff",
+                    fontWeight: "700",
+                    fontSize: 13,
+                  }}
+                >
+                  Confirmar localização
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.botaoLocalizacao}
+                onPress={cancelarEdicao}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="close-circle-outline"
+                  size={20}
+                  color="#2563eb"
+                />
+
+                <Text style={styles.botaoLocalizacaoTexto}>Cancelar</Text>
+              </TouchableOpacity>
             </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.botaoLocalizacao}
+              onPress={iniciarEdicao}
+              disabled={buscandoLocalizacao}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="create-outline" size={20} color="#2563eb" />
 
-            <Text style={styles.coordenadasTexto}>
-              Latitude: {coordenadas.latitude.toFixed(6)}
-            </Text>
-
-            <Text style={styles.coordenadasTexto}>
-              Longitude: {coordenadas.longitude.toFixed(6)}
-            </Text>
-
-            <Text style={styles.avisoTexto}>
-              O ponto foi estimado pelo endereço. Confirme a localização ao
-              chegar à empresa.
-            </Text>
-          </View>
+              <Text style={styles.botaoLocalizacaoTexto}>Ajustar no mapa</Text>
+            </TouchableOpacity>
+          )}
         </>
       ) : localizacaoNaoEncontrada ? (
         <View style={styles.mapaPlaceholder}>
@@ -102,16 +177,20 @@ export function LocalizacaoSection({
         </View>
       )}
 
-      <TouchableOpacity
-        style={styles.botaoLocalizacao}
-        onPress={onAtualizarLocalizacao}
-        disabled={buscandoLocalizacao}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="navigate-outline" size={20} color="#2563eb" />
+      {!modoEdicao && (
+        <TouchableOpacity
+          style={styles.botaoLocalizacao}
+          onPress={onAtualizarLocalizacao}
+          disabled={buscandoLocalizacao}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="navigate-outline" size={20} color="#2563eb" />
 
-        <Text style={styles.botaoLocalizacaoTexto}>Atualizar localização</Text>
-      </TouchableOpacity>
+          <Text style={styles.botaoLocalizacaoTexto}>
+            Atualizar localização pelo GPS
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

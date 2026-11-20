@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -21,6 +22,9 @@ import { useCadastroEmpresa } from "@/hooks/useCadastroEmpresa";
 import { styles } from "./styles";
 
 export function CadastroEmpresaScreen() {
+  // Controla a rolagem da tela durante a edição do mapa.
+  const [editandoMapa, setEditandoMapa] = useState(false);
+
   const {
     cnpj,
     razaoSocial,
@@ -41,6 +45,7 @@ export function CadastroEmpresaScreen() {
 
     buscarCnpj,
     atualizarLocalizacao,
+    confirmarLocalizacaoManual,
     salvarEmpresa,
 
     coordenadas,
@@ -58,6 +63,7 @@ export function CadastroEmpresaScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!editandoMapa}
       >
         <CadastroEmpresaHeader onVoltar={() => router.back()} />
 
@@ -91,6 +97,8 @@ export function CadastroEmpresaScreen() {
             buscandoLocalizacao={buscandoLocalizacao}
             localizacaoNaoEncontrada={localizacaoNaoEncontrada}
             onAtualizarLocalizacao={atualizarLocalizacao}
+            onConfirmarLocalizacaoManual={confirmarLocalizacaoManual}
+            onModoEdicaoChange={setEditandoMapa}
           />
 
           <ObservacoesSection
