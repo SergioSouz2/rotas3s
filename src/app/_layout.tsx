@@ -6,7 +6,7 @@ import { useColorScheme } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export default function TabLayout() {
     <DatabaseInitializer>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tab)" />
         </Stack>
       </ThemeProvider>
     </DatabaseInitializer>
