@@ -39,3 +39,42 @@ export async function localizarPorEndereco(
     throw new Error("Falha ao consultar a localização do endereço.");
   }
 }
+
+export async function localizarPorGps(): Promise<Coordenadas> {
+  const permissao = await Location.requestForegroundPermissionsAsync();
+
+  if (permissao.status !== "granted") {
+    throw new Error(
+      "Permissão de localização negada. Autorize o acesso à localização nas configurações do aplicativo.",
+    );
+  }
+
+  const servicosAtivos = await Location.hasServicesEnabledAsync();
+
+  if (!servicosAtivos) {
+    throw new Error(
+      "O GPS está desativado. Ative a localização do dispositivo e tente novamente.",
+    );
+  }
+
+  try {
+    const posicao = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    });
+
+    const { latitude, longitude } = posicao.coords;
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      throw new Error("COORDENADAS_INVALIDAS");
+    }
+
+    return {
+      latitude,
+      longitude,
+    };
+  } catch {
+    throw new Error(
+      "Não foi possível obter sua localização atual. Verifique o sinal do GPS e tente novamente.",
+    );
+  }
+}

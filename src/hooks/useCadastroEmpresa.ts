@@ -1,14 +1,16 @@
 import { consultarCnpj } from "@/services/cnpjService";
+
 import {
-    Coordenadas,
-    localizarPorEndereco,
+  type Coordenadas,
+  localizarPorEndereco,
+  localizarPorGps,
 } from "@/services/localizacaoService";
 
 import {
-    formatarCnpj,
-    formatarTelefone,
-    somenteNumeros,
-    validarCnpj,
+  formatarCnpj,
+  formatarTelefone,
+  somenteNumeros,
+  validarCnpj,
 } from "@/utils/cnpj/cnpj";
 
 import * as Location from "expo-location";
@@ -28,6 +30,7 @@ export function useCadastroEmpresa() {
 
   // Endereços
   const [enderecoCadastral, setEnderecoCadastral] = useState("");
+
   const [enderecoEntrega, setEnderecoEntrega] = useState("");
 
   // Informações adicionais
@@ -35,6 +38,7 @@ export function useCadastroEmpresa() {
 
   // Estados da consulta
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
+
   const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
 
   // Localização
@@ -53,8 +57,15 @@ export function useCadastroEmpresa() {
   const consultaEmAndamento = useRef(false);
   const enderecoEntregaEditado = useRef(false);
 
+  // Impede solicitações de GPS simultâneas.
+  const gpsEmAndamento = useRef(false);
+
+  // Controla qual operação está atualizando a localização.
+  const versaoOperacaoLocalizacao = useRef(0);
+
   function invalidarLocalizacao() {
     versaoEndereco.current += 1;
+    versaoOperacaoLocalizacao.current += 1;
 
     setCoordenadas(null);
     setOrigemLocalizacao(null);
@@ -103,12 +114,17 @@ export function useCadastroEmpresa() {
     versaoConsultaCnpj: number,
   ) {
     const versaoConsultaEndereco = versaoEndereco.current;
+    const versaoOperacao = ++versaoOperacaoLocalizacao.current;
+
+    const consultaAtual = () =>
+      versaoConsultaCnpj === versaoCnpj.current &&
+      versaoConsultaEndereco === versaoEndereco.current &&
+      versaoOperacao === versaoOperacaoLocalizacao.current;
 
     setBuscandoLocalizacao(true);
     setLocalizacaoNaoEncontrada(false);
 
     try {
-      // Android pode exigir permissão para geocodificação.
       if (Platform.OS === "android") {
         const permissao = await Location.requestForegroundPermissionsAsync();
 
@@ -117,19 +133,13 @@ export function useCadastroEmpresa() {
         }
       }
 
-      if (
-        versaoConsultaCnpj !== versaoCnpj.current ||
-        versaoConsultaEndereco !== versaoEndereco.current
-      ) {
+      if (!consultaAtual()) {
         return;
       }
 
       const resultado = await localizarPorEndereco(endereco);
 
-      if (
-        versaoConsultaCnpj !== versaoCnpj.current ||
-        versaoConsultaEndereco !== versaoEndereco.current
-      ) {
+      if (!consultaAtual()) {
         return;
       }
 
@@ -137,10 +147,7 @@ export function useCadastroEmpresa() {
       setOrigemLocalizacao("automatica");
       setLocalizacaoNaoEncontrada(false);
     } catch {
-      if (
-        versaoConsultaCnpj !== versaoCnpj.current ||
-        versaoConsultaEndereco !== versaoEndereco.current
-      ) {
+      if (!consultaAtual()) {
         return;
       }
 
@@ -148,7 +155,9 @@ export function useCadastroEmpresa() {
       setOrigemLocalizacao(null);
       setLocalizacaoNaoEncontrada(true);
     } finally {
-      setBuscandoLocalizacao(false);
+      if (consultaAtual()) {
+        setBuscandoLocalizacao(false);
+      }
     }
   }
 
@@ -177,20 +186,16 @@ export function useCadastroEmpresa() {
         return;
       }
 
-      // Preenche dados oficiais
       setRazaoSocial(dados.razaoSocial);
       setNomeFantasia(dados.nomeFantasia);
       setTelefone(dados.telefone);
       setEnderecoCadastral(dados.enderecoCadastral);
 
-      // Só preenche automaticamente se o motorista
-      // ainda não personalizou o endereço.
       if (!enderecoEntregaEditado.current) {
         setEnderecoEntrega(dados.enderecoCadastral);
         invalidarLocalizacao();
       }
 
-      // Localiza o endereço de entrega escolhido.
       const enderecoParaLocalizar = enderecoEntregaEditado.current
         ? enderecoEntrega
         : dados.enderecoCadastral;
@@ -220,11 +225,65 @@ export function useCadastroEmpresa() {
     }
   }
 
-  function atualizarLocalizacao() {
-    Alert.alert(
-      "Atualizar localização",
-      "A correção pelo GPS será utilizada quando o motorista chegar ao ponto de entrega.",
-    );
+  async function atualizarLocalizacao() {
+    if (gpsEmAndamento.current) {
+      return;
+    }
+
+    gpsEmAndamento.current = true;
+
+    const versaoConsultaCnpj = versaoCnpj.current;
+    const versaoConsultaEndereco = versaoEndereco.current;
+
+    // Invalida operações automáticas anteriores.
+    const versaoOperacao = ++versaoOperacaoLocalizacao.current;
+
+    setBuscandoLocalizacao(true);
+
+    try {
+      const resultado = await localizarPorGps();
+
+      // Ignora o resultado se o usuário alterou
+      // o CNPJ ou o endereço durante a busca.
+      if (
+        versaoConsultaCnpj !== versaoCnpj.current ||
+        versaoConsultaEndereco !== versaoEndereco.current ||
+        versaoOperacao !== versaoOperacaoLocalizacao.current
+      ) {
+        return;
+      }
+
+      setCoordenadas(resultado);
+      setOrigemLocalizacao("gps");
+      setLocalizacaoNaoEncontrada(false);
+
+      Alert.alert(
+        "Localização atualizada",
+        "O ponto de entrega foi atualizado com sua localização atual.",
+      );
+    } catch (erro) {
+      if (
+        versaoConsultaCnpj !== versaoCnpj.current ||
+        versaoConsultaEndereco !== versaoEndereco.current ||
+        versaoOperacao !== versaoOperacaoLocalizacao.current
+      ) {
+        return;
+      }
+
+      // Preserva as coordenadas anteriores.
+      Alert.alert(
+        "Não foi possível atualizar",
+        erro instanceof Error
+          ? erro.message
+          : "Falha ao obter a localização pelo GPS.",
+      );
+    } finally {
+      gpsEmAndamento.current = false;
+
+      if (versaoOperacao === versaoOperacaoLocalizacao.current) {
+        setBuscandoLocalizacao(false);
+      }
+    }
   }
 
   function salvarEmpresa() {
