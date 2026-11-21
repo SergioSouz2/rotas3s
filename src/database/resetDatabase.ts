@@ -5,39 +5,38 @@ import { empresas } from "./schema/empresas";
 import { entregas } from "./schema/entregas";
 import { usuarios } from "./schema/usuario";
 
-// Reset completo do banco
-export async function resetDatabase() {
+export async function resetDatabase(confirmacao: "RESETAR_TODOS_OS_DADOS") {
   if (!__DEV__) {
     throw new Error(
       "O reset do banco só pode ser executado em desenvolvimento.",
     );
   }
 
-  await db.transaction(async (tx) => {
-    await tx.delete(entregas);
-    await tx.delete(diasTrabalho);
-    await tx.delete(empresas);
-    await tx.delete(usuarios);
-  });
-
-  console.log("[DATABASE] Todos os dados de teste removidos.");
-}
-
-// Reset apenas das jornadas e entregas
-export async function resetJornadas() {
-  if (!__DEV__) {
-    throw new Error(
-      "O reset das jornadas só pode ser executado em desenvolvimento.",
-    );
+  if (confirmacao !== "RESETAR_TODOS_OS_DADOS") {
+    throw new Error("Confirmação inválida para reset do banco.");
   }
 
-  await db.transaction(async (tx) => {
-    // Primeiro remove as entregas por causa da chave estrangeira
-    await tx.delete(entregas);
+  try {
+    console.log("[DATABASE] Iniciando reset total...");
 
-    // Depois remove as jornadas
-    await tx.delete(diasTrabalho);
-  });
+    await db.transaction(async (tx) => {
+      // 1. Apagar entregas
+      await tx.delete(entregas);
 
-  console.log("[DATABASE] Jornadas e entregas removidas.");
+      // 2. Apagar jornadas
+      await tx.delete(diasTrabalho);
+
+      // 3. Apagar empresas
+      await tx.delete(empresas);
+
+      // 4. Apagar usuários
+      await tx.delete(usuarios);
+    });
+
+    console.log("[DATABASE] Banco de dados limpo com sucesso.");
+  } catch (error) {
+    console.error("[DATABASE] Erro ao resetar banco:", error);
+
+    throw error;
+  }
 }

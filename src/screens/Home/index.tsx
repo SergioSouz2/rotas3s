@@ -251,7 +251,7 @@ export function HomeScreen() {
             turnoAberto={status === "aberto"}
             onRegistrarEntrega={() => router.push("/entregas/nova")}
             onVerEntregas={() => router.push("/(tab)/entregas")}
-            onVerRota={() => router.push("/mapa/index")}
+            onVerRota={() => router.push("/mapa")}
             onFinalizarTurno={finalizarJornada}
           />
         </View>

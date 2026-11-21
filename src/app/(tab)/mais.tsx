@@ -1,11 +1,5 @@
-import { PlaceholderScreen } from "@/components/navigation/PlaceholderScreen";
+import { MaisScreen } from "@/screens/Mais";
 
 export default function MaisPage() {
-  return (
-    <PlaceholderScreen
-      titulo="Mais"
-      descricao="Acesse seu perfil e as configurações."
-      icon="settings-outline"
-    />
-  );
+  return <MaisScreen />;
 }
