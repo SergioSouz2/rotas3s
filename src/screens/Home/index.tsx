@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from "react";
 
 import { useFocusEffect, useRouter } from "expo-router";
+
+import * as Location from "expo-location";
+
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { DeliveryStats } from "@/components/home/DeliveryStats";
@@ -17,18 +20,32 @@ import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEntregasStats } from "@/hooks/useEntregasStats";
 import { useHomeData } from "@/hooks/useHomeData";
 
+import {
+  roteirizacaoService,
+  type ParadaRota,
+} from "@/services/roteirizacaoService";
+
 import { createStyles } from "./styles";
 
 type ProximaEntrega = {
   id: number;
   empresa: string;
   endereco: string;
+  latitude: number;
+  longitude: number;
+  status: string;
 };
+
+type EntregaComLocalizacao = ProximaEntrega & ParadaRota;
+
+const TIMEOUT_OTIMIZACAO_MS = 20000;
 
 function formatarData(data: string): string {
   const [ano, mes, dia] = data.slice(0, 10).split("-");
 
-  if (!ano || !mes || !dia) return data;
+  if (!ano || !mes || !dia) {
+    return data;
+  }
 
   return `${dia}/${mes}/${ano}`;
 }
@@ -56,6 +73,17 @@ function obterDataAtual(): string {
   ].join("-");
 }
 
+function coordenadasValidas(latitude: number, longitude: number): boolean {
+  return (
+    Number.isFinite(latitude) &&
+    Number.isFinite(longitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+}
+
 export function HomeScreen() {
   const theme = useAppTheme();
 
@@ -75,7 +103,6 @@ export function HomeScreen() {
     recarregarJornada,
   } = useHomeData();
 
-  // Estatísticas das entregas
   const {
     total,
     realizadas,
@@ -83,7 +110,6 @@ export function HomeScreen() {
     erro: erroEntregas,
   } = useEntregasStats(diaTrabalho?.id);
 
-  // Próxima entrega pendente
   const [proximaEntrega, setProximaEntrega] = useState<ProximaEntrega | null>(
     null,
   );
@@ -92,6 +118,8 @@ export function HomeScreen() {
 
   const [erroProxima, setErroProxima] = useState<string | null>(null);
 
+  const [tempoEstimado, setTempoEstimado] = useState<number | null>(null);
+
   const status: "nao_iniciada" | "aberto" | "finalizado" =
     diaTrabalho?.status === "aberto"
       ? "aberto"
@@ -99,81 +127,219 @@ export function HomeScreen() {
         ? "finalizado"
         : "nao_iniciada";
 
-  // Recarregar a jornada ao retornar para a Home
+  // Atualiza a jornada ao retornar à Home.
   useFocusEffect(
     useCallback(() => {
       void recarregarJornada();
     }, [recarregarJornada]),
   );
 
-  // Buscar próxima entrega pendente no SQLite
-  const carregarProximaEntrega = useCallback(async () => {
-    if (!diaTrabalho?.id || diaTrabalho.status !== "aberto") {
-      setProximaEntrega(null);
-      setErroProxima(null);
-      setCarregandoProxima(false);
-      return;
-    }
-
-    try {
-      setCarregandoProxima(true);
-      setErroProxima(null);
-
-      const entregas = await entregaRepository.findByDiaTrabalhoId(
-        diaTrabalho.id,
-      );
-
-      // A consulta do repository está ordenada
-      // pelo ID crescente.
-      const entregaPendente = entregas.find(
-        (entrega) => entrega.status === "pendente",
-      );
-
-      if (!entregaPendente) {
-        setProximaEntrega(null);
-        return;
-      }
-
-      const empresa = await empresaRepository.findById(
-        entregaPendente.empresaId,
-      );
-
-      setProximaEntrega({
-        id: entregaPendente.id,
-        empresa: empresa?.nome ?? `Empresa #${entregaPendente.empresaId}`,
-        endereco:
-          entregaPendente.endereco ||
-          empresa?.endereco ||
-          "Endereço não informado",
-      });
-    } catch (error) {
-      console.error("[HOME] Erro ao carregar próxima entrega:", error);
-
-      setErroProxima("Não foi possível carregar a próxima entrega.");
-
-      setProximaEntrega(null);
-    } finally {
-      setCarregandoProxima(false);
-    }
-  }, [diaTrabalho?.id, diaTrabalho?.status]);
-
-  // Atualizar a próxima entrega ao voltar para a Home
+  // Busca e otimiza a próxima entrega sempre
+  // que a Home recebe foco.
   useFocusEffect(
     useCallback(() => {
       let ativo = true;
+      const controlador = new AbortController();
 
-      async function atualizar() {
-        if (ativo) {
-          await carregarProximaEntrega();
+      async function carregarProximaEntrega() {
+        setProximaEntrega(null);
+        setErroProxima(null);
+        setTempoEstimado(null);
+
+        if (!diaTrabalho?.id || diaTrabalho.status !== "aberto") {
+          setCarregandoProxima(false);
+          return;
+        }
+
+        setCarregandoProxima(true);
+
+        try {
+          // 1. Busca todas as entregas da jornada.
+          const registros = await entregaRepository.findByDiaTrabalhoId(
+            diaTrabalho.id,
+          );
+
+          if (!ativo) return;
+
+          // 2. Considera somente entregas
+          // que ainda precisam ser realizadas.
+          const entregasRestantes = registros.filter(
+            (entrega) =>
+              entrega.status === "pendente" || entrega.status === "em_rota",
+          );
+
+          if (entregasRestantes.length === 0) {
+            setProximaEntrega(null);
+            return;
+          }
+
+          // 3. Busca os dados das empresas.
+          const entregasComEmpresa = await Promise.all(
+            entregasRestantes.map(async (entrega) => {
+              const empresa = await empresaRepository.findById(
+                entrega.empresaId,
+              );
+
+              const latitude = Number(entrega.latitude ?? empresa?.latitude);
+
+              const longitude = Number(entrega.longitude ?? empresa?.longitude);
+
+              const endereco =
+                entrega.endereco ||
+                empresa?.endereco ||
+                "Endereço não informado";
+
+              const nomeEmpresa =
+                empresa?.nome ?? `Empresa #${entrega.empresaId}`;
+
+              if (!coordenadasValidas(latitude, longitude)) {
+                return null;
+              }
+
+              const resultado: EntregaComLocalizacao = {
+                id: entrega.id,
+                empresa: nomeEmpresa,
+                endereco,
+                latitude,
+                longitude,
+                status: entrega.status,
+              };
+
+              return resultado;
+            }),
+          );
+
+          if (!ativo) return;
+
+          const entregasValidas = entregasComEmpresa.filter(
+            (entrega): entrega is EntregaComLocalizacao => entrega !== null,
+          );
+
+          if (entregasValidas.length === 0) {
+            setErroProxima(
+              "As entregas pendentes não possuem coordenadas válidas.",
+            );
+            return;
+          }
+
+          if (entregasValidas.length !== entregasRestantes.length) {
+            setErroProxima(
+              "Existem entregas sem localização. Corrija os endereços para otimizar toda a jornada.",
+            );
+            return;
+          }
+
+          // 4. Solicita permissão para utilizar
+          // a localização atual do motorista.
+          const permissao = await Location.requestForegroundPermissionsAsync();
+
+          if (!ativo) return;
+
+          if (permissao.status !== "granted") {
+            setErroProxima(
+              "Autorize o GPS para identificar a próxima entrega otimizada.",
+            );
+            return;
+          }
+
+          // 5. Obtém a localização atual.
+          // Não utiliza uma coordenada fixa como origem.
+          const localizacao = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.High,
+          });
+
+          if (!ativo) return;
+
+          const origem = {
+            latitude: localizacao.coords.latitude,
+            longitude: localizacao.coords.longitude,
+          };
+
+          if (!coordenadasValidas(origem.latitude, origem.longitude)) {
+            throw new Error("LOCALIZACAO_GPS_INVALIDA");
+          }
+
+          console.log("[HOME] Calculando rota a partir do GPS:", origem);
+
+          // 6. Otimiza todas as entregas restantes.
+          const timeout = setTimeout(() => {
+            controlador.abort();
+          }, TIMEOUT_OTIMIZACAO_MS);
+
+          let resultado;
+
+          try {
+            resultado = await roteirizacaoService.otimizar(
+              origem,
+              entregasValidas,
+              controlador.signal,
+            );
+          } finally {
+            clearTimeout(timeout);
+          }
+
+          if (!ativo || controlador.signal.aborted) {
+            return;
+          }
+
+          // 7. A primeira parada da sequência
+          // otimizada será exibida na Home.
+          const primeiraParada = resultado.paradas[0];
+
+          if (!primeiraParada) {
+            setErroProxima(
+              "Não foi possível identificar a primeira parada da rota.",
+            );
+            return;
+          }
+
+          const entregaSelecionada = entregasValidas.find(
+            (entrega) => entrega.id === primeiraParada.id,
+          );
+
+          if (!entregaSelecionada) {
+            throw new Error("ENTREGA_OTIMIZADA_NAO_ENCONTRADA");
+          }
+
+          setProximaEntrega(entregaSelecionada);
+
+          setTempoEstimado(resultado.duracaoSegundos);
+
+          console.log(
+            "[HOME] Próxima entrega otimizada:",
+            entregaSelecionada.empresa,
+          );
+
+          console.log(
+            "[HOME] Ordem otimizada:",
+            resultado.paradas.map((parada) => parada.empresa),
+          );
+        } catch (error) {
+          if (!ativo) return;
+
+          console.error("[HOME] Erro ao otimizar próxima entrega:", error);
+
+          setProximaEntrega(null);
+
+          setErroProxima(
+            controlador.signal.aborted
+              ? "O cálculo da rota demorou demais. Abra o Mapa para tentar novamente."
+              : "Não foi possível calcular a próxima entrega otimizada. Verifique o GPS e a internet.",
+          );
+        } finally {
+          if (ativo) {
+            setCarregandoProxima(false);
+          }
         }
       }
 
-      void atualizar();
+      void carregarProximaEntrega();
 
       return () => {
         ativo = false;
+        controlador.abort();
       };
-    }, [carregarProximaEntrega]),
+    }, [diaTrabalho?.id, diaTrabalho?.status]),
   );
 
   if (carregando) {
@@ -199,8 +365,6 @@ export function HomeScreen() {
 
           {erroEntregas && <Text style={styles.errorText}>{erroEntregas}</Text>}
 
-          {erroProxima && <Text style={styles.errorText}>{erroProxima}</Text>}
-
           <WelcomeCard
             nome={usuario?.nome ?? "Motorista"}
             turnoAberto={status === "aberto"}
@@ -218,29 +382,70 @@ export function HomeScreen() {
             onFinalizar={finalizarJornada}
           />
 
-          {/* Estatísticas das entregas */}
           <DeliveryStats
             total={total}
             realizadas={realizadas}
             pendentes={pendentes}
           />
 
-          {/* Próxima entrega real */}
+          {/* Próxima entrega escolhida
+              pelo cálculo da rota otimizada */}
           {status === "aberto" && (
             <>
               {carregandoProxima ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <View
+                  style={{
+                    alignItems: "center",
+                    paddingVertical: 20,
+                    gap: 10,
+                  }}
+                >
+                  <ActivityIndicator size="small" color={colors.primary} />
+
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                      textAlign: "center",
+                    }}
+                  >
+                    Calculando próxima entrega a partir do GPS...
+                  </Text>
+                </View>
               ) : proximaEntrega ? (
-                <NextDeliveryCard
-                  empresa={proximaEntrega.empresa}
-                  endereco={proximaEntrega.endereco}
-                />
+                <>
+                  <NextDeliveryCard
+                    empresa={proximaEntrega.empresa}
+                    endereco={proximaEntrega.endereco}
+                    latitude={proximaEntrega.latitude}
+                    longitude={proximaEntrega.longitude}
+                    status="Rota otimizada"
+                  />
+
+                  {tempoEstimado !== null && (
+                    <Text
+                      style={{
+                        color: colors.textSecondary,
+                        fontSize: 12,
+                        marginTop: 6,
+                        textAlign: "center",
+                      }}
+                    >
+                      Tempo estimado para concluir todas as entregas:{" "}
+                      {Math.ceil(tempoEstimado / 60)} min
+                    </Text>
+                  )}
+                </>
               ) : (
                 <View>
-                  <Text>
-                    {total === 0
-                      ? "Nenhuma entrega cadastrada nesta jornada."
-                      : "Nenhuma entrega pendente."}
+                  <Text
+                    style={{
+                      color: colors.textSecondary,
+                    }}
+                  >
+                    {erroProxima ??
+                      (total === 0
+                        ? "Nenhuma entrega cadastrada nesta jornada."
+                        : "Nenhuma entrega restante para realizar.")}
                   </Text>
                 </View>
               )}

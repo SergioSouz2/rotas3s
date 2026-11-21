@@ -13,6 +13,7 @@ import {
 } from "react-native";
 
 import { HomeHeader } from "@/components/home/HomeHeader";
+import { empresaRepository } from "@/database/repositories/empresaRepository";
 import { entregaRepository } from "@/database/repositories/entregaRepository";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useHomeData } from "@/hooks/useHomeData";
@@ -29,11 +30,11 @@ type StatusEntrega = {
   cor: string;
 };
 
+type NomesEmpresas = Record<number, string>;
+
 export function EntregasScreen() {
   const theme = useAppTheme();
-
   const styles = useMemo(() => createStyles(theme), [theme]);
-
   const { colors } = theme;
 
   const {
@@ -43,6 +44,8 @@ export function EntregasScreen() {
   } = useHomeData();
 
   const [entregas, setEntregas] = useState<Entrega[]>([]);
+  const [nomesEmpresas, setNomesEmpresas] = useState<NomesEmpresas>({});
+
   const [carregando, setCarregando] = useState(true);
   const [atualizando, setAtualizando] = useState(false);
   const [excluindoId, setExcluindoId] = useState<number | null>(null);
@@ -54,6 +57,7 @@ export function EntregasScreen() {
 
       if (!diaTrabalho?.id) {
         setEntregas([]);
+        setNomesEmpresas({});
         return;
       }
 
@@ -61,10 +65,32 @@ export function EntregasScreen() {
         diaTrabalho.id,
       );
 
+      // Busca apenas as empresas associadas às entregas.
+      const idsEmpresas = [
+        ...new Set(resultado.map((entrega) => entrega.empresaId)),
+      ];
+
+      const empresas = await Promise.all(
+        idsEmpresas.map(async (empresaId) => {
+          const empresa = await empresaRepository.findById(empresaId);
+
+          return {
+            id: empresaId,
+            nome: empresa?.nome?.trim() || "Empresa não encontrada",
+          };
+        }),
+      );
+
+      const mapaNomes: NomesEmpresas = {};
+
+      for (const empresa of empresas) {
+        mapaNomes[empresa.id] = empresa.nome;
+      }
+
+      setNomesEmpresas(mapaNomes);
       setEntregas(resultado);
     } catch (error) {
       console.error("[ENTREGAS] Erro ao carregar:", error);
-
       setErro("Não foi possível carregar as entregas.");
     } finally {
       setCarregando(false);
@@ -408,6 +434,10 @@ export function EntregasScreen() {
 
                   const excluindo = excluindoId === entrega.id;
 
+                  const nomeEmpresa =
+                    nomesEmpresas[entrega.empresaId] ??
+                    "Empresa não encontrada";
+
                   return (
                     <View key={entrega.id} style={styles.cardEntrega}>
                       {/* ÁREA CLICÁVEL */}
@@ -421,13 +451,14 @@ export function EntregasScreen() {
                         <View style={styles.entregaCabecalho}>
                           <View style={styles.entregaIdentificacao}>
                             <Ionicons
-                              name="cube-outline"
+                              name="business-outline"
                               size={20}
                               color={colors.primary}
                             />
 
+                            {/* NOME REAL DA EMPRESA */}
                             <Text style={styles.entregaTitulo}>
-                              Entrega #{entrega.id}
+                              {nomeEmpresa}
                             </Text>
                           </View>
 

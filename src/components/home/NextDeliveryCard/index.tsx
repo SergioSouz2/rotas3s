@@ -29,13 +29,19 @@ export function NextDeliveryCard({
   const { colors } = theme;
 
   async function handleVerRota() {
-    const possuiCoordenadas = latitude != null && longitude != null;
+    const possuiCoordenadas =
+      latitude != null &&
+      longitude != null &&
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
 
-    const destino = possuiCoordenadas
-      ? `${latitude},${longitude}`
-      : endereco.trim();
+    const enderecoFormatado = endereco.trim();
 
-    if (!destino) {
+    if (!possuiCoordenadas && !enderecoFormatado) {
       Alert.alert(
         "Localização indisponível",
         "Esta empresa não possui endereço ou coordenadas cadastradas.",
@@ -43,12 +49,20 @@ export function NextDeliveryCard({
       return;
     }
 
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destino)}`;
+    // O Waze aceita coordenadas ou busca por endereço.
+    const url = possuiCoordenadas
+      ? `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`
+      : `https://waze.com/ul?q=${encodeURIComponent(enderecoFormatado)}&navigate=yes`;
 
     try {
       await Linking.openURL(url);
-    } catch {
-      Alert.alert("Erro", "Não foi possível abrir a rota.");
+    } catch (error) {
+      console.error("[WAZE] Erro ao abrir rota:", error);
+
+      Alert.alert(
+        "Erro ao abrir Waze",
+        "Não foi possível abrir a navegação para esta empresa.",
+      );
     }
   }
 
@@ -88,7 +102,7 @@ export function NextDeliveryCard({
         style={styles.routeButton}
         onPress={handleVerRota}
         accessibilityRole="button"
-        accessibilityLabel={`Ver rota para ${empresa}`}
+        accessibilityLabel={`Abrir Waze para ${empresa}`}
       >
         <Ionicons
           name="navigate-outline"
@@ -96,7 +110,7 @@ export function NextDeliveryCard({
           color={colors.textInverse}
         />
 
-        <Text style={styles.routeButtonText}>Ver rota</Text>
+        <Text style={styles.routeButtonText}>Abrir no Waze</Text>
       </Pressable>
     </View>
   );

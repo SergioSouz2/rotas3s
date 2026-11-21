@@ -1,11 +1,5 @@
-import { PlaceholderScreen } from "@/components/navigation/PlaceholderScreen";
+import HistoricoScreen from "@/screens/Historico";
 
 export default function HistoricoPage() {
-  return (
-    <PlaceholderScreen
-      titulo="Histórico"
-      descricao="Consulte seus dias de trabalho anteriores."
-      icon="time-outline"
-    />
-  );
+  return <HistoricoScreen />;
 }
