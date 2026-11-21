@@ -1,40 +1,51 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#102f63",
-    paddingTop: 55,
-    paddingBottom: 20,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+import type { AppTheme } from "@/theme";
 
-  brand: {
-    width: 200,
-    height: 70,
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius } = theme;
 
-  logo: {
-    width: 200,
-    height: 70,
-  },
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.primary,
 
-  profileButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    borderWidth: 1.5,
-    borderColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+      paddingBottom: spacing.xl,
+      paddingHorizontal: spacing.lg,
 
-  profileIcon: {
-    fontSize: 23,
-    color: "#ffffff",
-  },
-});
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+
+    brand: {
+      width: 200,
+      height: 70,
+
+      justifyContent: "center",
+      alignItems: "flex-start",
+    },
+
+    logo: {
+      width: 200,
+      height: 70,
+    },
+
+    profileButton: {
+      width: 46,
+      height: 46,
+
+      borderRadius: radius.full,
+
+      borderWidth: 1.5,
+      borderColor: colors.textInverse,
+
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    profileIcon: {
+      fontSize: 23,
+      color: colors.textInverse,
+    },
+  });
+}

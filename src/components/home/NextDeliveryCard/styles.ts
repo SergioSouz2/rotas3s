@@ -1,101 +1,108 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 14,
-    gap: 12,
-  },
+import type { AppTheme } from "@/theme";
 
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
 
-  headerTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    flexShrink: 1,
-  },
+  return StyleSheet.create({
+    container: {
+      width: "100%",
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      gap: spacing.md,
+    },
 
-  title: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#102f63",
-  },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
 
-  statusBadge: {
-    backgroundColor: "#fff7ed",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
+    headerTitle: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      flexShrink: 1,
+    },
 
-  statusText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#c2410c",
-  },
+    title: {
+      fontSize: 15,
+      fontWeight: typography.weight.bold,
+      color: colors.primary,
+    },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#e2e8f0",
-  },
+    statusBadge: {
+      backgroundColor: colors.warningLight,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: radius.full,
+    },
 
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+    statusText: {
+      fontSize: 11,
+      fontWeight: typography.weight.bold,
+      color: colors.warningDark,
+    },
 
-  companyIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
-    backgroundColor: "#eff6ff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+    },
 
-  companyInfo: {
-    flex: 1,
-    gap: 4,
-  },
+    content: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+    },
 
-  companyName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
+    companyIcon: {
+      width: 46,
+      height: 46,
+      borderRadius: 12,
+      backgroundColor: colors.infoLight,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  address: {
-    fontSize: 12,
-    color: "#64748b",
-    lineHeight: 18,
-  },
+    companyInfo: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
 
-  routeButton: {
-    alignSelf: "flex-end",
-    backgroundColor: "#102f63",
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 7,
-  },
+    companyName: {
+      fontSize: 15,
+      fontWeight: typography.weight.bold,
+      color: colors.text,
+    },
 
-  routeButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#ffffff",
-  },
-});
+    address: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      lineHeight: 18,
+    },
+
+    routeButton: {
+      alignSelf: "flex-end",
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+    },
+
+    routeButtonText: {
+      fontSize: 13,
+      fontWeight: typography.weight.bold,
+      color: colors.textInverse,
+    },
+  });
+}

@@ -1,77 +1,85 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
+import type { AppTheme } from "@/theme";
 
-  info: {
-    flex: 1,
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
 
-  welcome: {
-    fontSize: 13,
-    color: "#64748b",
-    marginBottom: 4,
-  },
+  return StyleSheet.create({
+    container: {
+      width: "100%",
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.md,
+    },
 
-  nome: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#102f63",
-  },
+    info: {
+      flex: 1,
+      minWidth: 0,
+    },
 
-  cargo: {
-    fontSize: 13,
-    color: "#64748b",
-    marginTop: 4,
-  },
+    welcome: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
 
-  statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
+    nome: {
+      fontSize: 22,
+      fontWeight: "800",
+      color: colors.primary,
+    },
 
-  statusAberto: {
-    backgroundColor: "#dcfce7",
-  },
+    cargo: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
 
-  statusFechado: {
-    backgroundColor: "#fee2e2",
-  },
+    statusContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 10,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.full,
+      gap: 6,
+      flexShrink: 0,
+    },
 
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
+    statusAberto: {
+      backgroundColor: colors.successLight,
+    },
 
-  dotAberto: {
-    backgroundColor: "#16a34a",
-  },
+    statusFechado: {
+      backgroundColor: colors.dangerLight,
+    },
 
-  dotFechado: {
-    backgroundColor: "#dc2626",
-  },
+    statusDot: {
+      width: 7,
+      height: 7,
+      borderRadius: radius.full,
+    },
 
-  statusText: {
-    fontSize: 11,
-    fontWeight: "700",
-  },
+    dotAberto: {
+      backgroundColor: colors.success,
+    },
 
-  textAberto: {
-    color: "#15803d",
-  },
+    dotFechado: {
+      backgroundColor: colors.danger,
+    },
 
-  textFechado: {
-    color: "#b91c1c",
-  },
-});
+    statusText: {
+      fontSize: 11,
+      fontWeight: typography.weight.bold,
+    },
+
+    textAberto: {
+      color: colors.successDark,
+    },
+
+    textFechado: {
+      color: colors.dangerDark,
+    },
+  });
+}

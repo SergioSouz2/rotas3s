@@ -1,103 +1,110 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    backgroundColor: "#ecfdf5",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#bbf7d0",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
+import type { AppTheme } from "@/theme";
 
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 4,
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
 
-  title: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#166534",
-  },
+  return StyleSheet.create({
+    container: {
+      width: "100%",
+      backgroundColor: colors.successSurface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.successBorder,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+    },
 
-  content: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginBottom: spacing.xs,
+    },
 
-  info: {
-    flex: 1,
-  },
+    title: {
+      fontSize: 15,
+      fontWeight: typography.weight.bold,
+      color: colors.successDarker,
+    },
 
-  infoRight: {
-    flex: 1,
-    alignItems: "flex-end",
-  },
+    content: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
 
-  label: {
-    fontSize: 12,
-    color: "#64748b",
-    marginBottom: 5,
-  },
+    info: {
+      flex: 1,
+    },
 
-  value: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#102f63",
-  },
+    infoRight: {
+      flex: 1,
+      alignItems: "flex-end",
+    },
 
-  timeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
+    label: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginBottom: 5,
+    },
 
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-    gap: 8,
-  },
+    value: {
+      fontSize: typography.size.base,
+      fontWeight: "800",
+      color: colors.primary,
+    },
 
-  status: {
-    flex: 1,
-  },
+    timeContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
 
-  statusAberto: {},
-  statusFinalizado: {},
+    footer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: spacing.md,
+      gap: spacing.sm,
+    },
 
-  statusText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#166534",
-  },
+    status: {
+      flex: 1,
+    },
 
-  button: {
-    backgroundColor: "#15803d",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 8,
-    minWidth: 110,
-    alignItems: "center",
-  },
+    statusAberto: {},
 
-  buttonFinalizar: {
-    backgroundColor: "#dc2626",
-  },
+    statusFinalizado: {},
 
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+    statusText: {
+      fontSize: 11,
+      fontWeight: typography.weight.semibold,
+      color: colors.successDarker,
+    },
 
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-});
+    button: {
+      backgroundColor: colors.successDark,
+      paddingHorizontal: 14,
+      paddingVertical: 9,
+      borderRadius: radius.sm,
+      minWidth: 110,
+      alignItems: "center",
+    },
+
+    buttonFinalizar: {
+      backgroundColor: colors.danger,
+    },
+
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+
+    buttonText: {
+      color: colors.textInverse,
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.bold,
+    },
+  });
+}

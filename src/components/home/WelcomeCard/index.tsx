@@ -1,5 +1,8 @@
+import { useMemo } from "react";
 import { Text, View } from "react-native";
-import { styles } from "./styles";
+
+import { useAppTheme } from "@/hooks/useAppTheme";
+import { createStyles } from "./styles";
 
 interface WelcomeCardProps {
   nome: string;
@@ -7,6 +10,10 @@ interface WelcomeCardProps {
 }
 
 export function WelcomeCard({ nome, turnoAberto }: WelcomeCardProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const primeiroNome = nome.trim().split(/\s+/)[0] || "Motorista";
 
   return (

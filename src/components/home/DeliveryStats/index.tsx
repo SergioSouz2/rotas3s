@@ -1,7 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
+import { useMemo } from "react";
+
 import { Text, View } from "react-native";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+import type { AppTheme } from "@/theme";
+
+import { createStyles } from "./styles";
 
 interface DeliveryStatsProps {
   total: number;
@@ -9,7 +15,9 @@ interface DeliveryStatsProps {
   pendentes: number;
 }
 
-type IconName = React.ComponentProps<typeof Ionicons>["name"];
+type IconName = ComponentProps<typeof Ionicons>["name"];
+
+type Styles = ReturnType<typeof createStyles>;
 
 interface StatItemProps {
   titulo: string;
@@ -17,6 +25,7 @@ interface StatItemProps {
   icon: IconName;
   cor: string;
   background: string;
+  styles: Styles;
 }
 
 function StatItem({
@@ -25,6 +34,7 @@ function StatItem({
   icon,
   cor,
   background,
+  styles,
 }: StatItemProps) {
   return (
     <View style={styles.card}>
@@ -44,30 +54,39 @@ export function DeliveryStats({
   realizadas,
   pendentes,
 }: DeliveryStatsProps) {
+  const theme: AppTheme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={styles.container}>
       <StatItem
         titulo="Total"
         quantidade={total}
         icon="cube-outline"
-        cor="#2563eb"
-        background="#dbeafe"
+        cor={colors.info}
+        background={colors.infoSoft}
+        styles={styles}
       />
 
       <StatItem
         titulo="Realizadas"
         quantidade={realizadas}
         icon="checkmark-circle-outline"
-        cor="#16a34a"
-        background="#dcfce7"
+        cor={colors.success}
+        background={colors.successLight}
+        styles={styles}
       />
 
       <StatItem
         titulo="Pendentes"
         quantidade={pendentes}
         icon="time-outline"
-        cor="#ea580c"
-        background="#ffedd5"
+        cor={colors.warningStrong}
+        background={colors.warningSoft}
+        styles={styles}
       />
     </View>
   );

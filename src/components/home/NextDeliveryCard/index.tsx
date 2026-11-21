@@ -1,7 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
+
 import { Alert, Linking, Pressable, Text, View } from "react-native";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 interface NextDeliveryCardProps {
   empresa: string;
@@ -18,6 +22,12 @@ export function NextDeliveryCard({
   longitude,
   status = "Pendente",
 }: NextDeliveryCardProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   async function handleVerRota() {
     const possuiCoordenadas = latitude != null && longitude != null;
 
@@ -46,7 +56,7 @@ export function NextDeliveryCard({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTitle}>
-          <Ionicons name="location-outline" size={20} color="#102f63" />
+          <Ionicons name="location-outline" size={20} color={colors.primary} />
 
           <Text style={styles.title}>Próxima entrega</Text>
         </View>
@@ -60,7 +70,7 @@ export function NextDeliveryCard({
 
       <View style={styles.content}>
         <View style={styles.companyIcon}>
-          <Ionicons name="business-outline" size={24} color="#2563eb" />
+          <Ionicons name="business-outline" size={24} color={colors.info} />
         </View>
 
         <View style={styles.companyInfo}>
@@ -74,8 +84,17 @@ export function NextDeliveryCard({
         </View>
       </View>
 
-      <Pressable style={styles.routeButton} onPress={handleVerRota}>
-        <Ionicons name="navigate-outline" size={18} color="#ffffff" />
+      <Pressable
+        style={styles.routeButton}
+        onPress={handleVerRota}
+        accessibilityRole="button"
+        accessibilityLabel={`Ver rota para ${empresa}`}
+      >
+        <Ionicons
+          name="navigate-outline"
+          size={18}
+          color={colors.textInverse}
+        />
 
         <Text style={styles.routeButtonText}>Ver rota</Text>
       </Pressable>

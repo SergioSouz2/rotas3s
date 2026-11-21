@@ -1,10 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs, useRouter } from "expo-router";
-import type { ComponentProps } from "react";
+
+import { useMemo, type ComponentProps } from "react";
+
 import { Pressable, Text, View } from "react-native";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 type TabBarProps = Parameters<
   NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
@@ -23,18 +28,22 @@ const tabIcons: Record<
     active: "home",
     inactive: "home-outline",
   },
+
   entregas: {
     active: "cube",
     inactive: "cube-outline",
   },
+
   empresas: {
     active: "business",
     inactive: "business-outline",
   },
+
   historico: {
     active: "time",
     inactive: "time-outline",
   },
+
   mais: {
     active: "menu",
     inactive: "menu-outline",
@@ -43,7 +52,18 @@ const tabIcons: Record<
 
 export function CustomTabBar({ state, descriptors }: TabBarProps) {
   const router = useRouter();
+
+  // Tema global do 3S Rotas
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors, spacing } = theme;
+
+  // Área segura inferior do dispositivo
   const insets = useSafeAreaInsets();
+
+  const paddingBottom = Math.max(insets.bottom, spacing.sm);
 
   const handleNavigate = (routeName: string) => {
     switch (routeName) {
@@ -70,16 +90,10 @@ export function CustomTabBar({ state, descriptors }: TabBarProps) {
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingBottom: Math.max(insets.bottom, 8),
-        },
-      ]}
-    >
+    <View style={[styles.container, { paddingBottom }]}>
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+
         const focused = state.index === index;
 
         const label =
@@ -90,11 +104,11 @@ export function CustomTabBar({ state, descriptors }: TabBarProps) {
               : route.name;
 
         const icons = tabIcons[route.name] ?? {
-          active: "ellipse",
-          inactive: "ellipse-outline",
+          active: "ellipse" as IconName,
+          inactive: "ellipse-outline" as IconName,
         };
 
-        const color = focused ? "#2563eb" : "#64748b";
+        const color = focused ? colors.primary : colors.textSecondary;
 
         const onPress = () => {
           if (!focused) {
@@ -107,7 +121,9 @@ export function CustomTabBar({ state, descriptors }: TabBarProps) {
             key={route.key}
             onPress={onPress}
             accessibilityRole="tab"
-            accessibilityState={{ selected: focused }}
+            accessibilityState={{
+              selected: focused,
+            }}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
             style={styles.tab}
           >

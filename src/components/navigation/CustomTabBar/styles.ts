@@ -1,33 +1,44 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderTopWidth: 1,
-    borderTopColor: "#e2e8f0",
-    paddingTop: 10,
-    paddingHorizontal: 8,
-  },
+import type { AppTheme } from "@/theme";
 
-  tab: {
-    flex: 1,
-    minWidth: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingVertical: 5,
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, typography } = theme;
 
-  label: {
-    fontSize: 10,
-    fontWeight: "500",
-    color: "#64748b",
-  },
+  return StyleSheet.create({
+    container: {
+      flexDirection: "row",
+      alignItems: "center",
 
-  activeLabel: {
-    fontWeight: "700",
-    color: "#2563eb",
-  },
-});
+      backgroundColor: colors.surface,
+
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+
+      paddingTop: 10,
+      paddingHorizontal: spacing.sm,
+    },
+
+    tab: {
+      flex: 1,
+      minWidth: 0,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: spacing.xs,
+      paddingVertical: 5,
+    },
+
+    label: {
+      fontSize: typography.size.xs,
+      fontWeight: typography.weight.medium,
+      color: colors.textSecondary,
+    },
+
+    activeLabel: {
+      fontWeight: typography.weight.bold,
+      color: colors.primary,
+    },
+  });
+}

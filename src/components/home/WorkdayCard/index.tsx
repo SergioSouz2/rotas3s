@@ -1,7 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
+
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 type StatusJornada = "nao_iniciada" | "aberto" | "finalizado";
 
@@ -24,13 +28,23 @@ export function WorkdayCard({
   onIniciar,
   onFinalizar,
 }: WorkdayCardProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   const jornadaAberta = status === "aberto";
   const jornadaFinalizada = status === "finalizado";
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="calendar-outline" size={22} color="#15803d" />
+        <Ionicons
+          name="calendar-outline"
+          size={22}
+          color={colors.successDark}
+        />
 
         <Text style={styles.title}>Dia de trabalho</Text>
       </View>
@@ -38,6 +52,7 @@ export function WorkdayCard({
       <View style={styles.content}>
         <View style={styles.info}>
           <Text style={styles.label}>Data</Text>
+
           <Text style={styles.value}>{data}</Text>
         </View>
 
@@ -47,7 +62,11 @@ export function WorkdayCard({
           </Text>
 
           <View style={styles.timeContainer}>
-            <Ionicons name="time-outline" size={19} color="#15803d" />
+            <Ionicons
+              name="time-outline"
+              size={19}
+              color={colors.successDark}
+            />
 
             <Text style={styles.value}>
               {jornadaFinalizada ? fim || "--:--" : inicio || "--:--"}
@@ -80,7 +99,7 @@ export function WorkdayCard({
             disabled={processando}
           >
             {processando ? (
-              <ActivityIndicator color="#ffffff" size="small" />
+              <ActivityIndicator color={colors.textInverse} size="small" />
             ) : (
               <Text style={styles.buttonText}>Iniciar jornada</Text>
             )}
@@ -98,7 +117,7 @@ export function WorkdayCard({
             disabled={processando}
           >
             {processando ? (
-              <ActivityIndicator color="#ffffff" size="small" />
+              <ActivityIndicator color={colors.textInverse} size="small" />
             ) : (
               <Text style={styles.buttonText}>Finalizar</Text>
             )}

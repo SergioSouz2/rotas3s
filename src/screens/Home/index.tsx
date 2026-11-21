@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { DeliveryStats } from "@/components/home/DeliveryStats";
@@ -7,10 +9,11 @@ import { NextDeliveryCard } from "@/components/home/NextDeliveryCard";
 import { WelcomeCard } from "@/components/home/WelcomeCard";
 import { WorkdayCard } from "@/components/home/WorkdayCard";
 
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { useEntregasStats } from "@/hooks/useEntregasStats";
 import { useHomeData } from "@/hooks/useHomeData";
 
-import { styles } from "./styles";
+import { createStyles } from "./styles";
 
 function formatarData(data: string): string {
   const [ano, mes, dia] = data.slice(0, 10).split("-");
@@ -42,6 +45,13 @@ function obterDataAtual(): string {
 }
 
 export function HomeScreen() {
+  // Tema global do aplicativo
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   const {
     usuario,
     diaTrabalho,
@@ -69,18 +79,10 @@ export function HomeScreen() {
 
   if (carregando) {
     return (
-      <View
-        style={[
-          styles.container,
-          {
-            justifyContent: "center",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <ActivityIndicator size="large" color="#2563eb" />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
 
-        <Text style={{ marginTop: 12 }}>Carregando informações...</Text>
+        <Text style={styles.loadingText}>Carregando informações...</Text>
       </View>
     );
   }
@@ -94,11 +96,9 @@ export function HomeScreen() {
         <HomeHeader />
 
         <View style={styles.body}>
-          {erro && <Text style={{ color: "#dc2626" }}>{erro}</Text>}
+          {erro && <Text style={styles.errorText}>{erro}</Text>}
 
-          {erroEntregas && (
-            <Text style={{ color: "#dc2626" }}>{erroEntregas}</Text>
-          )}
+          {erroEntregas && <Text style={styles.errorText}>{erroEntregas}</Text>}
 
           <WelcomeCard
             nome={usuario?.nome ?? "Motorista"}

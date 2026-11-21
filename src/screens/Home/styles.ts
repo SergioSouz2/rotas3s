@@ -1,21 +1,45 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f1f5f9",
-  },
+import type { AppTheme } from "@/theme";
 
-  content: {
-    flexGrow: 1,
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing } = theme;
 
-  body: {
-    flex: 1,
-    backgroundColor: "#f8fafc",
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 40,
-    gap: 20,
-  },
-});
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.background,
+    },
+
+    loadingText: {
+      marginTop: spacing.md,
+      color: colors.textSecondary,
+      fontSize: theme.typography.size.md,
+    },
+
+    content: {
+      flexGrow: 1,
+    },
+
+    body: {
+      flex: 1,
+      backgroundColor: colors.backgroundSecondary,
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.xxl,
+      paddingBottom: 40,
+      gap: spacing.xl,
+    },
+
+    errorText: {
+      color: colors.danger,
+      fontSize: theme.typography.size.md,
+    },
+  });
+}
