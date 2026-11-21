@@ -1,19 +1,31 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  botaoBuscar: {
-    backgroundColor: "#2563eb",
-    borderRadius: 11,
-    minHeight: 48,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
+import type { AppTheme } from "@/theme";
 
-  botaoBuscarTexto: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});
+export function createStyles(theme: AppTheme) {
+  const { colors, radius, spacing, typography } = theme;
+
+  return StyleSheet.create({
+    botaoBuscar: {
+      backgroundColor: colors.info,
+      borderRadius: radius.md,
+      minHeight: 48,
+
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: spacing.sm,
+    },
+
+    botaoBuscarTexto: {
+      color: colors.textInverse,
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+    },
+
+    botaoDesabilitado: {
+      opacity: 0.7,
+    },
+  });
+}

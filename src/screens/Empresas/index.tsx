@@ -18,9 +18,17 @@ import { EmpresasHeader } from "@/components/empresas/EmpresasHeader";
 import { empresaRepository } from "@/database/repositories/empresaRepository";
 import type { Empresa } from "@/database/schema/empresas";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 export function EmpresasScreen() {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   const [busca, setBusca] = useState("");
 
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
@@ -28,6 +36,7 @@ export function EmpresasScreen() {
   const [atualizando, setAtualizando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  // Carrega as empresas cadastradas no SQLite.
   const carregarEmpresas = useCallback(async (atualizacao = false) => {
     if (atualizacao) {
       setAtualizando(true);
@@ -52,14 +61,15 @@ export function EmpresasScreen() {
   }, []);
 
   // Atualiza a lista sempre que a tela recebe foco.
-  // Isso inclui o retorno após cadastrar uma empresa.
+  // Inclui o retorno após cadastrar ou editar uma empresa.
   useFocusEffect(
     useCallback(() => {
       void carregarEmpresas();
     }, [carregarEmpresas]),
   );
 
-  // Pesquisa pelo nome, razão social, nome fantasia ou CNPJ.
+  // Pesquisa pelo nome, razão social,
+  // nome fantasia ou CNPJ.
   const empresasFiltradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     const termoNumerico = termo.replace(/\D/g, "");
@@ -70,8 +80,11 @@ export function EmpresasScreen() {
 
     return empresas.filter((empresa) => {
       const nome = empresa.nome.toLowerCase();
+
       const razaoSocial = (empresa.razaoSocial ?? "").toLowerCase();
+
       const nomeFantasia = (empresa.nomeFantasia ?? "").toLowerCase();
+
       const cnpj = empresa.cnpj.replace(/\D/g, "");
 
       return (
@@ -106,6 +119,8 @@ export function EmpresasScreen() {
           <RefreshControl
             refreshing={atualizando}
             onRefresh={() => void carregarEmpresas(true)}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
       >
@@ -121,52 +136,23 @@ export function EmpresasScreen() {
             <Text style={styles.secaoTitulo}>Empresas cadastradas</Text>
 
             {carregando ? (
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 48,
-                  gap: 12,
-                }}
-              >
-                <ActivityIndicator size="large" color="#16a34a" />
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.success} />
 
-                <Text style={{ color: "#64748b" }}>Carregando empresas...</Text>
+                <Text style={styles.loadingText}>Carregando empresas...</Text>
               </View>
             ) : erro ? (
-              <View
-                style={{
-                  alignItems: "center",
-                  paddingVertical: 36,
-                  gap: 12,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "#dc2626",
-                    textAlign: "center",
-                  }}
-                >
-                  {erro}
-                </Text>
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{erro}</Text>
 
                 <TouchableOpacity
                   onPress={() => void carregarEmpresas()}
-                  style={{
-                    backgroundColor: "#16a34a",
-                    paddingHorizontal: 20,
-                    paddingVertical: 12,
-                    borderRadius: 10,
-                  }}
+                  style={styles.retryButton}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tentar carregar empresas novamente"
                 >
-                  <Text
-                    style={{
-                      color: "#ffffff",
-                      fontWeight: "700",
-                    }}
-                  >
-                    Tentar novamente
-                  </Text>
+                  <Text style={styles.retryButtonText}>Tentar novamente</Text>
                 </TouchableOpacity>
               </View>
             ) : empresasFiltradas.length === 0 ? (
@@ -177,6 +163,8 @@ export function EmpresasScreen() {
                   key={empresa.id}
                   activeOpacity={0.8}
                   onPress={() => handleAbrirEmpresa(empresa.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Abrir detalhes de ${empresa.nome}`}
                 >
                   <EmpresaCard
                     nome={empresa.nome}

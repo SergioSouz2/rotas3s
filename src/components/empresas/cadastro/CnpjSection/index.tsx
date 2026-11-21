@@ -1,4 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
+
 import {
   ActivityIndicator,
   Text,
@@ -7,8 +9,10 @@ import {
   View,
 } from "react-native";
 
-import { formStyles } from "../formStyles";
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createFormStyles } from "../formStyles";
+import { createStyles } from "./styles";
 
 interface CnpjSectionProps {
   cnpj: string;
@@ -23,6 +27,14 @@ export function CnpjSection({
   onChangeCnpj,
   onBuscarCnpj,
 }: CnpjSectionProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const formStyles = useMemo(() => createFormStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={formStyles.card}>
       <Text style={formStyles.secaoTitulo}>Identificação da empresa</Text>
@@ -38,22 +50,36 @@ export function CnpjSection({
         value={cnpj}
         onChangeText={onChangeCnpj}
         placeholder="00.000.000/0000-00"
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholder}
         keyboardType="numeric"
         maxLength={18}
         editable={!buscandoCnpj}
+        autoCorrect={false}
+        accessibilityLabel="CNPJ da empresa"
       />
 
       <TouchableOpacity
-        style={[styles.botaoBuscar, buscandoCnpj && { opacity: 0.7 }]}
+        style={[styles.botaoBuscar, buscandoCnpj && styles.botaoDesabilitado]}
         onPress={onBuscarCnpj}
         disabled={buscandoCnpj}
         activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={
+          buscandoCnpj ? "Consultando CNPJ" : "Buscar dados oficiais do CNPJ"
+        }
+        accessibilityState={{
+          disabled: buscandoCnpj,
+          busy: buscandoCnpj,
+        }}
       >
         {buscandoCnpj ? (
-          <ActivityIndicator size="small" color="#ffffff" />
+          <ActivityIndicator size="small" color={colors.textInverse} />
         ) : (
-          <Ionicons name="search-outline" size={19} color="#ffffff" />
+          <Ionicons
+            name="search-outline"
+            size={19}
+            color={colors.textInverse}
+          />
         )}
 
         <Text style={styles.botaoBuscarTexto}>

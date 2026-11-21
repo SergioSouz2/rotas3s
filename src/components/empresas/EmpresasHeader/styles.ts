@@ -1,80 +1,92 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#102f63",
-    paddingHorizontal: 16,
-    paddingTop: 55,
-    paddingBottom: 20,
-  },
+import type { AppTheme } from "@/theme";
 
-  brand: {
-    width: "100%",
-    height: 70,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, typography } = theme;
 
-  logo: {
-    width: 130,
-    height: 70,
-  },
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.primary,
 
-  conteudo: {
-    marginTop: 20,
-    gap: 22,
-  },
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.xl,
+    },
 
-  titulos: {
-    gap: 5,
-  },
+    brand: {
+      width: "100%",
+      height: 70,
 
-  titulo: {
-    fontSize: 25,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
 
-  subtitulo: {
-    fontSize: 13,
-    color: "#cbd5e1",
-  },
+    logo: {
+      width: 130,
+      height: 70,
+    },
 
-  rodape: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-  },
+    conteudo: {
+      marginTop: spacing.xl,
+      gap: 22,
+    },
 
-  contadorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexShrink: 1,
-  },
+    titulos: {
+      gap: 5,
+      flexShrink: 1,
+    },
 
-  contador: {
-    color: "#e2e8f0",
-    fontSize: 13,
-    fontWeight: "500",
-  },
+    titulo: {
+      fontSize: 25,
+      fontWeight: "800",
+      color: colors.textInverse,
+    },
 
-  botao: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    backgroundColor: "#2563eb",
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderRadius: 11,
-  },
+    subtitulo: {
+      fontSize: 13,
+      color: colors.disabled,
+    },
 
-  botaoTexto: {
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-});
+    rodape: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: spacing.md,
+    },
+
+    contadorContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      flexShrink: 1,
+    },
+
+    contador: {
+      color: colors.border,
+      fontSize: 13,
+      fontWeight: typography.weight.medium,
+    },
+
+    botao: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: 5,
+
+      backgroundColor: colors.info,
+
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+
+      borderRadius: 11,
+    },
+
+    botaoTexto: {
+      color: colors.textInverse,
+      fontSize: 13,
+      fontWeight: typography.weight.bold,
+    },
+  });
+}

@@ -1,6 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { TextInput, View } from "react-native";
-import { styles } from "./styles";
+import { useMemo } from "react";
+
+import { Pressable, TextInput, View } from "react-native";
+
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 interface EmpresaSearchProps {
   value: string;
@@ -8,26 +13,38 @@ interface EmpresaSearchProps {
 }
 
 export function EmpresaSearch({ value, onChangeText }: EmpresaSearchProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={styles.container}>
-      <Ionicons name="search-outline" size={21} color="#64748b" />
+      <Ionicons name="search-outline" size={21} color={colors.textSecondary} />
 
       <TextInput
         style={styles.input}
         placeholder="Buscar empresa ou CNPJ..."
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholder}
         value={value}
         onChangeText={onChangeText}
         autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType="search"
+        accessibilityLabel="Buscar empresa ou CNPJ"
       />
 
       {value.length > 0 && (
-        <Ionicons
-          name="close-circle"
-          size={20}
-          color="#94a3b8"
+        <Pressable
           onPress={() => onChangeText("")}
-        />
+          style={styles.clearButton}
+          accessibilityRole="button"
+          accessibilityLabel="Limpar pesquisa"
+          hitSlop={8}
+        >
+          <Ionicons name="close-circle" size={20} color={colors.placeholder} />
+        </Pressable>
       )}
     </View>
   );

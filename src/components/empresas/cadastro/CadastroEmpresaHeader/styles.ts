@@ -1,38 +1,52 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  header: {
-    backgroundColor: "#102f63",
-    paddingTop: 55,
-    paddingHorizontal: 20,
-    paddingBottom: 28,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
+import type { AppTheme } from "@/theme";
 
-  voltar: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: "#234b7c",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
 
-  headerTextos: {
-    flex: 1,
-    gap: 4,
-  },
+  return StyleSheet.create({
+    header: {
+      backgroundColor: colors.primary,
 
-  headerTitulo: {
-    fontSize: 23,
-    fontWeight: "800",
-    color: "#ffffff",
-  },
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.xxl,
 
-  headerSubtitulo: {
-    fontSize: 12,
-    color: "#cbd5e1",
-  },
-});
+      flexDirection: "row",
+      alignItems: "center",
+
+      gap: 14,
+    },
+
+    voltar: {
+      width: 40,
+      height: 40,
+
+      borderRadius: radius.md,
+
+      backgroundColor: colors.secondary,
+
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    headerTextos: {
+      flex: 1,
+      minWidth: 0,
+      gap: spacing.xs,
+    },
+
+    headerTitulo: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textInverse,
+    },
+
+    headerSubtitulo: {
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.regular,
+      color: colors.disabled,
+      lineHeight: typography.lineHeight.sm,
+    },
+  });
+}

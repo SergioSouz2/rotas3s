@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
 import { Text, View } from "react-native";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 interface EmpresasEmptyStateProps {
   buscando?: boolean;
@@ -10,13 +13,19 @@ interface EmpresasEmptyStateProps {
 export function EmpresasEmptyState({
   buscando = false,
 }: EmpresasEmptyStateProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={styles.container}>
       <View style={styles.icone}>
         <Ionicons
           name={buscando ? "search-outline" : "business-outline"}
-          size={34}
-          color="#64748b"
+          size={30}
+          color={colors.textSecondary}
         />
       </View>
 

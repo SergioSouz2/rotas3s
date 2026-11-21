@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -12,18 +12,34 @@ import {
   View,
 } from "react-native";
 
+import { AppHeader } from "@/components/AppHeader";
+
 import { CnpjSection } from "@/components/empresas/cadastro/CnpjSection";
 import { DadosEmpresaSection } from "@/components/empresas/cadastro/DadosEmpresaSection";
 import { EnderecoSection } from "@/components/empresas/cadastro/EnderecoSection";
 import { LocalizacaoSection } from "@/components/empresas/cadastro/LocalizacaoSection";
 import { ObservacoesSection } from "@/components/empresas/cadastro/ObservacoesSection";
 
+import { useAppSafeArea } from "@/hooks/useAppSafeArea";
+import { useAppTheme } from "@/hooks/useAppTheme";
 import { useCadastroEmpresa } from "@/hooks/useCadastroEmpresa";
 
-import { AppHeader } from "@/components/AppHeader";
-import { styles } from "./styles";
+import { createStyles } from "./styles";
 
 export function CadastroEmpresaScreen() {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
+  // SafeArea inferior para evitar a barra de navegação nativa.
+  // O AppHeader já controla a SafeArea superior.
+  const { bottomStyle } = useAppSafeArea({
+    top: false,
+    bottom: true,
+  });
+
   // Controla a rolagem durante a edição do mapa.
   const [editandoMapa, setEditandoMapa] = useState(false);
 
@@ -57,6 +73,8 @@ export function CadastroEmpresaScreen() {
     origemLocalizacao,
     localizacaoNaoEncontrada,
   } = useCadastroEmpresa();
+
+  const botaoDesabilitado = salvando || editandoMapa;
 
   return (
     <KeyboardAvoidingView
@@ -114,26 +132,40 @@ export function CadastroEmpresaScreen() {
             onChangeObservacoes={setObservacoes}
           />
 
-          <TouchableOpacity
-            style={[styles.botaoSalvar, salvando && { opacity: 0.6 }]}
-            onPress={salvarEmpresa}
-            disabled={salvando || editandoMapa}
-            activeOpacity={0.8}
-          >
-            {salvando ? (
-              <ActivityIndicator size="small" color="#ffffff" />
-            ) : (
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={22}
-                color="#ffffff"
-              />
-            )}
+          {/* Botão protegido pela SafeArea inferior */}
+          <View style={bottomStyle}>
+            <TouchableOpacity
+              style={[
+                styles.botaoSalvar,
+                botaoDesabilitado && styles.botaoSalvarDesabilitado,
+              ]}
+              onPress={salvarEmpresa}
+              disabled={botaoDesabilitado}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={
+                salvando ? "Salvando empresa" : "Salvar empresa"
+              }
+              accessibilityState={{
+                disabled: botaoDesabilitado,
+                busy: salvando,
+              }}
+            >
+              {salvando ? (
+                <ActivityIndicator size="small" color={colors.textInverse} />
+              ) : (
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={22}
+                  color={colors.textInverse}
+                />
+              )}
 
-            <Text style={styles.botaoSalvarTexto}>
-              {salvando ? "Salvando empresa..." : "Salvar empresa"}
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.botaoSalvarTexto}>
+                {salvando ? "Salvando empresa..." : "Salvar empresa"}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

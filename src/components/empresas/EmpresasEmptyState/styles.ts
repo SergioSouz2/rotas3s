@@ -1,35 +1,54 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 24,
-    paddingVertical: 48,
-    alignItems: "center",
-    gap: 12,
-  },
-  icone: {
-    width: 76,
-    height: 76,
-    borderRadius: 24,
-    backgroundColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  titulo: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#0f172a",
-    textAlign: "center",
-  },
-  descricao: {
-    fontSize: 13,
-    color: "#64748b",
-    textAlign: "center",
-    lineHeight: 21,
-  },
-});
+import type { AppTheme } from "@/theme";
+
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
+
+  return StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: colors.border,
+
+      paddingHorizontal: spacing.xxl,
+      paddingVertical: 40,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: spacing.md,
+    },
+
+    icone: {
+      width: 68,
+      height: 68,
+
+      borderRadius: 22,
+      backgroundColor: colors.background,
+
+      alignItems: "center",
+      justifyContent: "center",
+
+      marginBottom: spacing.xs,
+    },
+
+    titulo: {
+      fontSize: typography.size.base,
+      fontWeight: typography.weight.bold,
+      color: colors.text,
+
+      textAlign: "center",
+    },
+
+    descricao: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+
+      textAlign: "center",
+      lineHeight: typography.lineHeight.md,
+    },
+  });
+}

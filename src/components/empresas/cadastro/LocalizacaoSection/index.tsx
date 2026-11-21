@@ -1,12 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 
 import { MapaLocalizacao } from "@/components/empresas/cadastro/MapaLocalizacao";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
 import type { Coordenadas } from "@/services/localizacaoService";
 
-import { formStyles } from "../formStyles";
-import { styles } from "./styles";
+import { createFormStyles } from "../formStyles";
+import { createStyles } from "./styles";
 
 type OrigemLocalizacao = "automatica" | "gps" | "manual";
 
@@ -28,6 +31,14 @@ export function LocalizacaoSection({
   onConfirmarLocalizacaoManual,
   onModoEdicaoChange,
 }: LocalizacaoSectionProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const formStyles = useMemo(() => createFormStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   const [modoEdicao, setModoEdicao] = useState(false);
 
   const [posicaoTemporaria, setPosicaoTemporaria] =
@@ -86,7 +97,7 @@ export function LocalizacaoSection({
 
       {buscandoLocalizacao ? (
         <View style={styles.mapaPlaceholder}>
-          <ActivityIndicator size="large" color="#2563eb" />
+          <ActivityIndicator size="large" color={colors.info} />
 
           <Text style={styles.mapaTexto}>Buscando localização...</Text>
         </View>
@@ -99,35 +110,25 @@ export function LocalizacaoSection({
           />
 
           {modoEdicao ? (
-            <View style={{ gap: 8, marginTop: 8 }}>
+            <View style={styles.acoesEdicao}>
               <Text style={styles.mapaTexto}>
                 Arraste o mapa para posicionar o marcador na entrada da empresa.
               </Text>
 
               <TouchableOpacity
-                style={[
-                  styles.botaoLocalizacao,
-                  {
-                    backgroundColor: "#16a34a",
-                    borderColor: "#16a34a",
-                  },
-                ]}
+                style={[styles.botaoLocalizacao, styles.botaoConfirmar]}
                 onPress={confirmarEdicao}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmar localização manual"
               >
                 <Ionicons
                   name="checkmark-circle-outline"
                   size={20}
-                  color="#ffffff"
+                  color={colors.textInverse}
                 />
 
-                <Text
-                  style={{
-                    color: "#ffffff",
-                    fontWeight: "700",
-                    fontSize: 13,
-                  }}
-                >
+                <Text style={styles.botaoConfirmarTexto}>
                   Confirmar localização
                 </Text>
               </TouchableOpacity>
@@ -136,11 +137,13 @@ export function LocalizacaoSection({
                 style={styles.botaoLocalizacao}
                 onPress={cancelarEdicao}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar edição da localização"
               >
                 <Ionicons
                   name="close-circle-outline"
                   size={20}
-                  color="#2563eb"
+                  color={colors.info}
                 />
 
                 <Text style={styles.botaoLocalizacaoTexto}>Cancelar</Text>
@@ -152,8 +155,10 @@ export function LocalizacaoSection({
               onPress={iniciarEdicao}
               disabled={buscandoLocalizacao}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Ajustar localização no mapa"
             >
-              <Ionicons name="create-outline" size={20} color="#2563eb" />
+              <Ionicons name="create-outline" size={20} color={colors.info} />
 
               <Text style={styles.botaoLocalizacaoTexto}>Ajustar no mapa</Text>
             </TouchableOpacity>
@@ -161,7 +166,7 @@ export function LocalizacaoSection({
         </>
       ) : localizacaoNaoEncontrada ? (
         <View style={styles.mapaPlaceholder}>
-          <Ionicons name="location-outline" size={36} color="#dc2626" />
+          <Ionicons name="location-outline" size={36} color={colors.danger} />
 
           <Text style={styles.mapaTexto}>Localização não encontrada</Text>
 
@@ -171,7 +176,7 @@ export function LocalizacaoSection({
         </View>
       ) : (
         <View style={styles.mapaPlaceholder}>
-          <Ionicons name="map-outline" size={36} color="#64748b" />
+          <Ionicons name="map-outline" size={36} color={colors.textSecondary} />
 
           <Text style={styles.mapaTexto}>Aguardando consulta do CNPJ</Text>
         </View>
@@ -183,8 +188,10 @@ export function LocalizacaoSection({
           onPress={onAtualizarLocalizacao}
           disabled={buscandoLocalizacao}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Atualizar localização pelo GPS"
         >
-          <Ionicons name="navigate-outline" size={20} color="#2563eb" />
+          <Ionicons name="navigate-outline" size={20} color={colors.info} />
 
           <Text style={styles.botaoLocalizacaoTexto}>
             Atualizar localização pelo GPS

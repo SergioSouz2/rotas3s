@@ -1,70 +1,96 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  mapaPlaceholder: {
-    minHeight: 160,
-    backgroundColor: "#f1f5f9",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    gap: 8,
-  },
+import type { AppTheme } from "@/theme";
 
-  mapaTexto: {
-    fontSize: 13,
-    color: "#64748b",
-    textAlign: "center",
-  },
+export function createStyles(theme: AppTheme) {
+  const { colors, spacing, radius, typography } = theme;
 
-  informacoesLocalizacao: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 10,
-    padding: 12,
-    gap: 8,
-  },
+  return StyleSheet.create({
+    mapaPlaceholder: {
+      minHeight: 160,
+      backgroundColor: colors.background,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
 
-  statusLocalizacao: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+      alignItems: "center",
+      justifyContent: "center",
 
-  statusTexto: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#16a34a",
-    flex: 1,
-  },
+      padding: spacing.lg,
+      gap: spacing.sm,
+    },
 
-  coordenadasTexto: {
-    fontSize: 12,
-    color: "#64748b",
-  },
+    mapaTexto: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: "center",
+    },
 
-  avisoTexto: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#64748b",
-    marginTop: 4,
-  },
+    informacoesLocalizacao: {
+      backgroundColor: colors.backgroundSecondary,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
 
-  botaoLocalizacao: {
-    minHeight: 50,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2563eb",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
+    statusLocalizacao: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
 
-  botaoLocalizacaoTexto: {
-    color: "#2563eb",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-});
+    statusTexto: {
+      fontSize: 13,
+      fontWeight: typography.weight.bold,
+      color: colors.success,
+      flex: 1,
+    },
+
+    coordenadasTexto: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+    },
+
+    avisoTexto: {
+      fontSize: typography.size.sm,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+
+    acoesEdicao: {
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+
+    botaoLocalizacao: {
+      minHeight: 50,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.info,
+
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+
+      gap: spacing.sm,
+    },
+
+    botaoLocalizacaoTexto: {
+      color: colors.info,
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+    },
+
+    botaoConfirmar: {
+      backgroundColor: colors.success,
+      borderColor: colors.success,
+    },
+
+    botaoConfirmarTexto: {
+      color: colors.textInverse,
+      fontSize: 13,
+      fontWeight: typography.weight.bold,
+    },
+  });
+}

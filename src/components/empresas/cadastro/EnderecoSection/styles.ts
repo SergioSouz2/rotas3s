@@ -1,5 +1,9 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  container: {},
-});
+import type { AppTheme } from "@/theme";
+
+export function createStyles(_theme: AppTheme) {
+  return StyleSheet.create({
+    container: {},
+  });
+}

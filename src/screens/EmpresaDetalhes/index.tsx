@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -20,7 +20,9 @@ import { empresaRepository } from "@/database/repositories/empresaRepository";
 import type { Empresa } from "@/database/schema/empresas";
 
 import { useAppSafeArea } from "@/hooks/useAppSafeArea";
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 type CampoExpandido = {
   titulo: string;
@@ -35,6 +37,10 @@ interface CampoProps {
 }
 
 function Campo({ titulo, valor, onExpandir, linhas = 1 }: CampoProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const texto = valor?.trim() || "Não informado";
 
   return (
@@ -62,9 +68,15 @@ function Campo({ titulo, valor, onExpandir, linhas = 1 }: CampoProps) {
 export function EmpresaDetalhesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // SafeArea adaptada para Android e iOS
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
+  // O AppHeader já controla a SafeArea superior.
   const { containerStyle } = useAppSafeArea({
-    top: true,
+    top: false,
     bottom: true,
   });
 
@@ -162,7 +174,6 @@ export function EmpresaDetalhesScreen() {
     />
   );
 
-  // Carregamento ou empresa não encontrada
   if (carregando || !empresa) {
     return (
       <View style={[styles.container, containerStyle]}>
@@ -171,13 +182,17 @@ export function EmpresaDetalhesScreen() {
         <View style={styles.centro}>
           {carregando ? (
             <>
-              <ActivityIndicator size="large" color="#16a34a" />
+              <ActivityIndicator size="large" color={colors.success} />
 
               <Text style={styles.textoSecundario}>Carregando empresa...</Text>
             </>
           ) : (
             <>
-              <Ionicons name="business-outline" size={42} color="#94a3b8" />
+              <Ionicons
+                name="business-outline"
+                size={42}
+                color={colors.placeholder}
+              />
 
               <Text style={styles.textoSecundario}>Empresa não encontrada</Text>
             </>
@@ -195,7 +210,11 @@ export function EmpresaDetalhesScreen() {
         {/* Identificação da empresa */}
         <View style={styles.identificacao}>
           <View style={styles.iconeEmpresa}>
-            <Ionicons name="business-outline" size={20} color="#16a34a" />
+            <Ionicons
+              name="business-outline"
+              size={20}
+              color={colors.success}
+            />
           </View>
 
           <View style={styles.identificacaoTextos}>
@@ -212,7 +231,11 @@ export function EmpresaDetalhesScreen() {
         {/* Dados cadastrais */}
         <View style={styles.card}>
           <View style={styles.cardCabecalho}>
-            <Ionicons name="document-text-outline" size={15} color="#16a34a" />
+            <Ionicons
+              name="document-text-outline"
+              size={15}
+              color={colors.success}
+            />
 
             <Text style={styles.cardTitulo}>Dados cadastrais</Text>
           </View>
@@ -238,31 +261,39 @@ export function EmpresaDetalhesScreen() {
           />
         </View>
 
-        {/* Endereços */}
+        {/* Endereços compactos */}
         <View style={styles.card}>
           <View style={styles.cardCabecalho}>
-            <Ionicons name="location-outline" size={15} color="#16a34a" />
+            <Ionicons
+              name="location-outline"
+              size={15}
+              color={colors.success}
+            />
 
             <Text style={styles.cardTitulo}>Endereços</Text>
           </View>
 
-          <Campo
-            titulo="Endereço de entrega"
-            valor={empresa.endereco}
-            onExpandir={setCampoExpandido}
-          />
+          <View style={styles.linha}>
+            <Campo
+              titulo="Endereço de entrega"
+              valor={empresa.endereco}
+              onExpandir={setCampoExpandido}
+              linhas={1}
+            />
 
-          <Campo
-            titulo="Endereço cadastral"
-            valor={empresa.enderecoCadastral}
-            onExpandir={setCampoExpandido}
-          />
+            <Campo
+              titulo="Endereço cadastral"
+              valor={empresa.enderecoCadastral}
+              onExpandir={setCampoExpandido}
+              linhas={1}
+            />
+          </View>
         </View>
 
         {/* Geolocalização */}
         <View style={styles.cardMapa}>
           <View style={styles.cardCabecalho}>
-            <Ionicons name="map-outline" size={15} color="#16a34a" />
+            <Ionicons name="map-outline" size={15} color={colors.success} />
 
             <Text style={styles.cardTitulo}>Geolocalização</Text>
           </View>
@@ -272,7 +303,11 @@ export function EmpresaDetalhesScreen() {
               <MapaLocalizacao coordenadas={coordenadas} />
             ) : (
               <View style={styles.semLocalizacao}>
-                <Ionicons name="location-outline" size={25} color="#94a3b8" />
+                <Ionicons
+                  name="location-outline"
+                  size={25}
+                  color={colors.placeholder}
+                />
 
                 <Text style={styles.textoSecundario}>
                   Localização não cadastrada
@@ -281,15 +316,21 @@ export function EmpresaDetalhesScreen() {
             )}
           </View>
 
-          {/* Navegação */}
+          {/* Botões de navegação */}
           <View style={styles.acoes}>
             <TouchableOpacity
               style={[styles.botao, !coordenadas && styles.botaoDesabilitado]}
               disabled={!coordenadas}
               onPress={() => void abrirNavegacao("google")}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir no Google Maps"
             >
-              <Ionicons name="navigate-outline" size={16} color="#ffffff" />
+              <Ionicons
+                name="navigate-outline"
+                size={16}
+                color={colors.textInverse}
+              />
 
               <Text style={styles.textoBotao}>Google Maps</Text>
             </TouchableOpacity>
@@ -299,8 +340,14 @@ export function EmpresaDetalhesScreen() {
               disabled={!coordenadas}
               onPress={() => void abrirNavegacao("waze")}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Abrir no Waze"
             >
-              <Ionicons name="car-outline" size={16} color="#ffffff" />
+              <Ionicons
+                name="car-outline"
+                size={16}
+                color={colors.textInverse}
+              />
 
               <Text style={styles.textoBotao}>Waze</Text>
             </TouchableOpacity>
@@ -317,18 +364,24 @@ export function EmpresaDetalhesScreen() {
             })
           }
           activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="Ver observações"
         >
-          <Ionicons name="chatbox-outline" size={16} color="#16a34a" />
+          <Ionicons name="chatbox-outline" size={16} color={colors.success} />
 
           <Text style={styles.observacoesTexto} numberOfLines={1}>
             {empresa.observacoes || "Nenhuma observação cadastrada."}
           </Text>
 
-          <Ionicons name="chevron-forward" size={15} color="#94a3b8" />
+          <Ionicons
+            name="chevron-forward"
+            size={15}
+            color={colors.placeholder}
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Modal de informações completas */}
+      {/* Modal para visualizar informações completas */}
       <Modal
         visible={campoExpandido !== null}
         transparent
@@ -345,8 +398,12 @@ export function EmpresaDetalhesScreen() {
             <View style={styles.modalCabecalho}>
               <Text style={styles.modalTitulo}>{campoExpandido?.titulo}</Text>
 
-              <TouchableOpacity onPress={() => setCampoExpandido(null)}>
-                <Ionicons name="close" size={22} color="#64748b" />
+              <TouchableOpacity
+                onPress={() => setCampoExpandido(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Fechar detalhes"
+              >
+                <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 

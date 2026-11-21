@@ -1,7 +1,10 @@
+import { useMemo } from "react";
 import { Text, TextInput, View } from "react-native";
 
-import { formStyles } from "../formStyles";
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createFormStyles } from "../formStyles";
+import { createStyles } from "./styles";
 
 interface ObservacoesSectionProps {
   observacoes: string;
@@ -12,6 +15,14 @@ export function ObservacoesSection({
   observacoes,
   onChangeObservacoes,
 }: ObservacoesSectionProps) {
+  const theme = useAppTheme();
+
+  const formStyles = useMemo(() => createFormStyles(theme), [theme]);
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={formStyles.card}>
       <Text style={formStyles.secaoTitulo}>Observações</Text>
@@ -21,9 +32,10 @@ export function ObservacoesSection({
         value={observacoes}
         onChangeText={onChangeObservacoes}
         placeholder="Referências, entrada de carga, horários..."
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholder}
         multiline
         textAlignVertical="top"
+        accessibilityLabel="Observações sobre a empresa"
       />
     </View>
   );

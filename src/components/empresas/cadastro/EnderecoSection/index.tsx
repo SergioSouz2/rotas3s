@@ -1,7 +1,10 @@
+import { useMemo } from "react";
 import { Text, TextInput, View } from "react-native";
 
-import { formStyles } from "../formStyles";
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createFormStyles } from "../formStyles";
+import { createStyles } from "./styles";
 
 interface EnderecoSectionProps {
   enderecoCadastral: string;
@@ -16,28 +19,40 @@ export function EnderecoSection({
   onChangeEnderecoCadastral,
   onChangeEnderecoEntrega,
 }: EnderecoSectionProps) {
+  const theme = useAppTheme();
+
+  const formStyles = useMemo(() => createFormStyles(theme), [theme]);
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors } = theme;
+
   return (
     <View style={[formStyles.card, styles.container]}>
       <Text style={formStyles.secaoTitulo}>Endereços</Text>
 
       <Text style={formStyles.label}>Endereço cadastral</Text>
+
       <TextInput
         style={[formStyles.input, formStyles.inputMultiline]}
         value={enderecoCadastral}
         onChangeText={onChangeEnderecoCadastral}
         placeholder="Endereço registrado no CNPJ"
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholder}
         multiline
+        accessibilityLabel="Endereço cadastral da empresa"
       />
 
       <Text style={formStyles.label}>Endereço de entrega</Text>
+
       <TextInput
         style={[formStyles.input, formStyles.inputMultiline]}
         value={enderecoEntrega}
         onChangeText={onChangeEnderecoEntrega}
         placeholder="Local onde a entrega será realizada"
-        placeholderTextColor="#94a3b8"
+        placeholderTextColor={colors.placeholder}
         multiline
+        accessibilityLabel="Endereço de entrega da empresa"
       />
     </View>
   );

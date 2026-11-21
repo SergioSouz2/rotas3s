@@ -1,7 +1,11 @@
 import { StyleSheet } from "react-native";
 
-export const styles = StyleSheet.create({
-  observacoes: {
-    minHeight: 100,
-  },
-});
+import type { AppTheme } from "@/theme";
+
+export function createStyles(_theme: AppTheme) {
+  return StyleSheet.create({
+    observacoes: {
+      minHeight: 100,
+    },
+  });
+}

@@ -1,7 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { styles } from "./styles";
+import { useAppTheme } from "@/hooks/useAppTheme";
+
+import { createStyles } from "./styles";
 
 interface AppHeaderProps {
   titulo: string;
@@ -10,8 +14,22 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ titulo, subtitulo, onVoltar }: AppHeaderProps) {
+  const theme = useAppTheme();
+  const insets = useSafeAreaInsets();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const { colors, spacing } = theme;
+
   return (
-    <View style={styles.header}>
+    <View
+      style={[
+        styles.header,
+        {
+          paddingTop: insets.top + spacing.lg,
+        },
+      ]}
+    >
       {onVoltar && (
         <TouchableOpacity
           style={styles.voltar}
@@ -21,7 +39,7 @@ export function AppHeader({ titulo, subtitulo, onVoltar }: AppHeaderProps) {
           accessibilityLabel="Voltar"
           hitSlop={8}
         >
-          <Ionicons name="arrow-back" size={23} color="#ffffff" />
+          <Ionicons name="arrow-back" size={22} color={colors.textInverse} />
         </TouchableOpacity>
       )}
 

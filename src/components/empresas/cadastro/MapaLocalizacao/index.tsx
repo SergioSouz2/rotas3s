@@ -6,12 +6,14 @@ import {
   type MapRef,
 } from "@maplibre/maplibre-react-native";
 
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect, useMemo, useRef } from "react";
 import { View } from "react-native";
+
+import { useAppTheme } from "@/hooks/useAppTheme";
 
 import type { Coordenadas } from "@/services/localizacaoService";
 
-import { styles } from "./styles";
+import { createStyles } from "./styles";
 
 const MAPTILER_KEY = process.env.EXPO_PUBLIC_MAPTILER_KEY;
 
@@ -28,6 +30,10 @@ function MapaLocalizacaoComponent({
   modoEdicao = false,
   onAlterarPosicao,
 }: MapaLocalizacaoProps) {
+  const theme = useAppTheme();
+
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const cameraRef = useRef<CameraRef>(null);
   const mapRef = useRef<MapRef>(null);
 
