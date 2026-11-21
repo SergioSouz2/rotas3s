@@ -1,6 +1,6 @@
-import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 
+import { useFocusEffect, useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 
 import { DeliveryStats } from "@/components/home/DeliveryStats";
@@ -62,6 +62,7 @@ export function HomeScreen() {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const { colors } = theme;
+  const router = useRouter();
 
   const {
     usuario,
@@ -246,7 +247,13 @@ export function HomeScreen() {
             </>
           )}
 
-          <HomeActions />
+          <HomeActions
+            turnoAberto={status === "aberto"}
+            onRegistrarEntrega={() => router.push("/entregas/nova")}
+            onVerEntregas={() => router.push("/(tab)/entregas")}
+            onVerRota={() => router.push("/mapa/index")}
+            onFinalizarTurno={finalizarJornada}
+          />
         </View>
       </ScrollView>
     </View>
