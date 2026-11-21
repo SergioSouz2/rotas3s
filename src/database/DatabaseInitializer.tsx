@@ -5,6 +5,7 @@ import { ActivityIndicator, Text, View } from "react-native";
 
 import { db } from "./client";
 import migrations from "./migrations/migrations";
+import { resetJornadas } from "./resetDatabase";
 import { seedDatabase } from "./seed/seedDatabase";
 
 interface DatabaseInitializerProps {
@@ -22,11 +23,21 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
 
     let ativo = true;
 
-    // Inicialização padrão do banco de dados
     async function inicializarDados() {
       try {
-        // Executa o seed somente quando necessário.
-        // O próprio seed verifica se os dados já existem.
+        // RESET TEMPORÁRIO PARA TESTES
+        // Altere para false depois de executar uma vez.
+        const RESETAR_JORNADAS = false;
+
+        if (__DEV__ && RESETAR_JORNADAS) {
+          console.log("[DATABASE] Reiniciando jornadas de teste...");
+
+          await resetJornadas();
+
+          console.log("[DATABASE] Jornadas reiniciadas.");
+        }
+
+        // Inicialização padrão do banco
         await seedDatabase();
 
         if (ativo) {
@@ -77,7 +88,7 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
     );
   }
 
-  // Aguarda as migrations e o seed terminarem
+  // Aguarda migrations e seed
   if (!success || !seedConcluido) {
     return (
       <View
@@ -95,6 +106,6 @@ export function DatabaseInitializer({ children }: DatabaseInitializerProps) {
     );
   }
 
-  // Banco pronto: libera a renderização do aplicativo
+  // Banco pronto
   return <>{children}</>;
 }

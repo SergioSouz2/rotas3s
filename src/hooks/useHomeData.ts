@@ -14,8 +14,14 @@ export function useHomeData() {
     await jornadaHook.recarregar();
   }, [usuarioHook.recarregar, jornadaHook.recarregar]);
 
+  // Recarrega especificamente os dados da jornada
+  const recarregarJornada = useCallback(async () => {
+    await jornadaHook.recarregar();
+  }, [jornadaHook.recarregar]);
+
   return {
     usuario: usuarioHook.usuario,
+
     diaTrabalho: jornadaHook.diaTrabalho,
 
     carregando: usuarioHook.carregando || jornadaHook.carregando,
@@ -24,8 +30,13 @@ export function useHomeData() {
 
     erro: usuarioHook.erro || jornadaHook.erro,
 
+    // Atualização completa
     recarregar,
 
+    // Atualização da jornada
+    recarregarJornada,
+
+    // Ações da jornada
     iniciarJornada: jornadaHook.iniciarJornada,
     finalizarJornada: jornadaHook.finalizarJornada,
   };

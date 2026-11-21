@@ -6,6 +6,7 @@ import {
   localizarPorEndereco,
   localizarPorGps,
 } from "@/services/localizacaoService";
+import { useLocalSearchParams } from "expo-router";
 
 import {
   formatarCnpj,
@@ -22,10 +23,15 @@ import { Alert, Platform } from "react-native";
 type OrigemLocalizacao = "automatica" | "gps" | "manual";
 
 export function useCadastroEmpresa() {
+  const { cnpj: cnpjParametro, origem } = useLocalSearchParams<{
+    cnpj?: string;
+    origem?: string;
+  }>();
+
   const router = useRouter();
 
   // Identificação
-  const [cnpj, setCnpj] = useState("");
+  const [cnpj, setCnpj] = useState(() => formatarCnpj(cnpjParametro ?? ""));
 
   // Dados da empresa
   const [razaoSocial, setRazaoSocial] = useState("");

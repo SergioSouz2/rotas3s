@@ -17,7 +17,7 @@ export const diaTrabalhoRepository = {
     return dia;
   },
 
-  // Listar todos os dias, do mais recente ao mais antigo
+  // Listar todos os dias
   async findAll() {
     return db.select().from(diasTrabalho).orderBy(desc(diasTrabalho.data));
   },
@@ -42,7 +42,7 @@ export const diaTrabalhoRepository = {
       .orderBy(desc(diasTrabalho.data));
   },
 
-  // Buscar um dia específico de um usuário
+  // Buscar um dia específico
   async findByUsuarioAndData(usuarioId: number, data: string) {
     const [dia] = await db
       .select()
@@ -50,6 +50,23 @@ export const diaTrabalhoRepository = {
       .where(
         and(eq(diasTrabalho.usuarioId, usuarioId), eq(diasTrabalho.data, data)),
       )
+      .limit(1);
+
+    return dia ?? null;
+  },
+
+  // Buscar jornada aberta, independentemente da data
+  async findAbertaByUsuarioId(usuarioId: number) {
+    const [dia] = await db
+      .select()
+      .from(diasTrabalho)
+      .where(
+        and(
+          eq(diasTrabalho.usuarioId, usuarioId),
+          eq(diasTrabalho.status, "aberto"),
+        ),
+      )
+      .orderBy(desc(diasTrabalho.data), desc(diasTrabalho.id))
       .limit(1);
 
     return dia ?? null;
@@ -84,7 +101,7 @@ export const diaTrabalhoRepository = {
     return dia ?? null;
   },
 
-  // Atualizar observações e outros campos permitidos
+  // Atualizar informações permitidas
   async update(id: number, dados: AtualizarDiaTrabalho) {
     const [dia] = await db
       .update(diasTrabalho)

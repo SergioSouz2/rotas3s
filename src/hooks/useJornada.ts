@@ -1,4 +1,5 @@
 import { diaTrabalhoRepository } from "@/database/repositories/diaTrabalhoRepository";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type DiaTrabalho = NonNullable<
@@ -19,12 +20,14 @@ export function useJornada(usuarioId: number | undefined) {
   const [diaTrabalho, setDiaTrabalho] = useState<DiaTrabalho | null>(null);
 
   const [carregando, setCarregando] = useState(true);
+
   const [processando, setProcessando] = useState(false);
+
   const [erro, setErro] = useState<string | null>(null);
 
   const operacaoEmAndamento = useRef(false);
 
-  // Buscar jornada do dia atual
+  // Recuperar a jornada ativa ou a jornada de hoje
   const recarregar = useCallback(async () => {
     if (usuarioId === undefined) {
       setDiaTrabalho(null);
@@ -36,14 +39,25 @@ export function useJornada(usuarioId: number | undefined) {
       setCarregando(true);
       setErro(null);
 
-      const jornada = await diaTrabalhoRepository.findByUsuarioAndData(
+      // Prioridade: jornada que continua aberta
+      const jornadaAberta =
+        await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+
+      if (jornadaAberta) {
+        setDiaTrabalho(jornadaAberta);
+        return;
+      }
+
+      // Sem jornada aberta, consultar o dia atual
+      const jornadaHoje = await diaTrabalhoRepository.findByUsuarioAndData(
         usuarioId,
         obterDataAtual(),
       );
 
-      setDiaTrabalho(jornada);
+      setDiaTrabalho(jornadaHoje);
     } catch (error) {
       console.error("[JORNADA] Erro ao carregar:", error);
+
       setErro("Não foi possível carregar a jornada.");
     } finally {
       setCarregando(false);
@@ -65,9 +79,18 @@ export function useJornada(usuarioId: number | undefined) {
     setErro(null);
 
     try {
+      // Verificar se existe jornada aberta
+      const jornadaAberta =
+        await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+
+      if (jornadaAberta) {
+        setDiaTrabalho(jornadaAberta);
+        return;
+      }
+
       const dataAtual = obterDataAtual();
 
-      // Evita duplicação da jornada
+      // Verificar se já existe jornada hoje
       const existente = await diaTrabalhoRepository.findByUsuarioAndData(
         usuarioId,
         dataAtual,
@@ -78,6 +101,7 @@ export function useJornada(usuarioId: number | undefined) {
         return;
       }
 
+      // Criar uma nova jornada
       const jornada = await diaTrabalhoRepository.create({
         usuarioId,
         data: dataAtual,
@@ -90,6 +114,7 @@ export function useJornada(usuarioId: number | undefined) {
       setDiaTrabalho(jornada);
     } catch (error) {
       console.error("[JORNADA] Erro ao iniciar:", error);
+
       setErro("Não foi possível iniciar a jornada.");
     } finally {
       operacaoEmAndamento.current = false;
@@ -121,6 +146,7 @@ export function useJornada(usuarioId: number | undefined) {
       setDiaTrabalho(jornada);
     } catch (error) {
       console.error("[JORNADA] Erro ao finalizar:", error);
+
       setErro("Não foi possível finalizar a jornada.");
 
       await recarregar();

@@ -8,6 +8,7 @@ import { theme } from "@/theme";
 
 import * as SplashScreen from "expo-splash-screen";
 
+import { SelecaoEntregasProvider } from "@/contexts/SelecaoEntregasContext";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -56,17 +57,20 @@ export default function RootLayout() {
           <StatusBar style="light" />
 
           <DatabaseInitializer>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: {
-                  backgroundColor: theme.colors.background,
-                },
-              }}
-            >
-              <Stack.Screen name="(tab)" />
-              <Stack.Screen name="empresas/nova" />
-            </Stack>
+            <SelecaoEntregasProvider>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: {
+                    backgroundColor: theme.colors.background,
+                  },
+                }}
+              >
+                <Stack.Screen name="(tab)" />
+                <Stack.Screen name="empresas/nova" />
+                <Stack.Screen name="entregas" />
+              </Stack>
+            </SelecaoEntregasProvider>
           </DatabaseInitializer>
         </NavigationThemeProvider>
       </AppThemeProvider>

@@ -1,5 +1,6 @@
 import { entregaRepository } from "@/database/repositories/entregaRepository";
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 
 interface EstatisticasEntregas {
   total: number;
@@ -19,8 +20,10 @@ export function useEntregasStats(diaTrabalhoId: number | undefined) {
   );
 
   const [carregando, setCarregando] = useState(false);
+
   const [erro, setErro] = useState<string | null>(null);
 
+  // Buscar estatísticas atualizadas no SQLite
   const recarregar = useCallback(async () => {
     if (diaTrabalhoId === undefined) {
       setEstatisticas(ESTATISTICAS_INICIAIS);
@@ -49,6 +52,12 @@ export function useEntregasStats(diaTrabalhoId: number | undefined) {
         realizadas,
         pendentes,
       });
+
+      console.log("[HOME] Estatísticas atualizadas:", {
+        total: entregas.length,
+        realizadas,
+        pendentes,
+      });
     } catch (error) {
       console.error("[ENTREGAS] Erro ao carregar estatísticas:", error);
 
@@ -58,9 +67,12 @@ export function useEntregasStats(diaTrabalhoId: number | undefined) {
     }
   }, [diaTrabalhoId]);
 
-  useEffect(() => {
-    void recarregar();
-  }, [recarregar]);
+  // Atualizar sempre que a tela receber foco
+  useFocusEffect(
+    useCallback(() => {
+      void recarregar();
+    }, [recarregar]),
+  );
 
   return {
     ...estatisticas,

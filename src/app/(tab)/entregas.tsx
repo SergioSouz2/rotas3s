@@ -1,11 +1,5 @@
-import { PlaceholderScreen } from "@/components/navigation/PlaceholderScreen";
+import { EntregasScreen } from "@/screens/Entregas";
 
 export default function EntregasPage() {
-  return (
-    <PlaceholderScreen
-      titulo="Entregas"
-      descricao="Gerencie suas entregas do dia."
-      icon="cube-outline"
-    />
-  );
+  return <EntregasScreen />;
 }
