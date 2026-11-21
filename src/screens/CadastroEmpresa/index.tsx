@@ -12,7 +12,6 @@ import {
   View,
 } from "react-native";
 
-import { CadastroEmpresaHeader } from "@/components/empresas/cadastro/CadastroEmpresaHeader";
 import { CnpjSection } from "@/components/empresas/cadastro/CnpjSection";
 import { DadosEmpresaSection } from "@/components/empresas/cadastro/DadosEmpresaSection";
 import { EnderecoSection } from "@/components/empresas/cadastro/EnderecoSection";
@@ -21,6 +20,7 @@ import { ObservacoesSection } from "@/components/empresas/cadastro/ObservacoesSe
 
 import { useCadastroEmpresa } from "@/hooks/useCadastroEmpresa";
 
+import { AppHeader } from "@/components/AppHeader";
 import { styles } from "./styles";
 
 export function CadastroEmpresaScreen() {
@@ -69,7 +69,11 @@ export function CadastroEmpresaScreen() {
         showsVerticalScrollIndicator={false}
         scrollEnabled={!editandoMapa}
       >
-        <CadastroEmpresaHeader onVoltar={() => router.back()} />
+        <AppHeader
+          titulo="Nova empresa"
+          subtitulo="Cadastre um novo ponto de entrega"
+          onVoltar={() => router.back()}
+        />
 
         <View style={styles.body}>
           <CnpjSection
