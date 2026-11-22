@@ -3,13 +3,13 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -79,8 +79,6 @@ export function DetalheEntregaScreen() {
       setEntrega(registro);
       setEmpresa(dadosEmpresa);
     } catch (error) {
-      console.error("[ENTREGA DETALHES] Erro ao carregar:", error);
-
       setErro("Não foi possível carregar os detalhes da entrega.");
     } finally {
       setCarregando(false);
@@ -198,8 +196,6 @@ export function DetalheEntregaScreen() {
           : "A entrega foi finalizada com sucesso.",
       );
     } catch (error) {
-      console.error("[ENTREGA DETALHES] Erro ao atualizar:", error);
-
       Alert.alert("Erro", "Não foi possível atualizar o status da entrega.");
 
       await carregarDados();
@@ -299,8 +295,6 @@ export function DetalheEntregaScreen() {
     try {
       await Linking.openURL(url);
     } catch (error) {
-      console.error("[ENTREGA DETALHES] Erro ao abrir mapa:", error);
-
       Alert.alert("Erro", "Não foi possível abrir o mapa.");
     }
   }

@@ -56,8 +56,6 @@ export function SelecaoEntregasScreen() {
 
       setEmpresas(resultado);
     } catch (error) {
-      console.error("[NOVA ENTREGA] Erro ao carregar empresas:", error);
-
       setErro("Não foi possível carregar as empresas.");
     } finally {
       setCarregando(false);
@@ -172,11 +170,6 @@ export function SelecaoEntregasScreen() {
         empresasSelecionadas,
       );
 
-      console.log(
-        "[ENTREGAS] Entregas registradas:",
-        entregasCriadas.map((entrega) => entrega.id),
-      );
-
       limparSelecao();
 
       Alert.alert(
@@ -192,8 +185,6 @@ export function SelecaoEntregasScreen() {
         ],
       );
     } catch (error) {
-      console.error("[ENTREGAS] Erro ao salvar entregas:", error);
-
       Alert.alert(
         "Erro ao salvar",
         "Não foi possível registrar as entregas. Sua seleção foi mantida para tentar novamente.",

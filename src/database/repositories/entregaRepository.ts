@@ -70,8 +70,6 @@ export const entregaRepository = {
         .values(registros)
         .returning();
 
-      console.log(`[ENTREGAS] ${entregasCriadas.length} entregas registradas.`);
-
       return entregasCriadas;
     });
   },

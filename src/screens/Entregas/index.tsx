@@ -90,8 +90,6 @@ export function EntregasScreen() {
       setNomesEmpresas(mapaNomes);
       setEntregas(resultado);
     } catch (error) {
-      console.error("[ENTREGAS] Erro ao carregar:", error);
-      setErro("Não foi possível carregar as entregas.");
     } finally {
       setCarregando(false);
     }
@@ -197,8 +195,6 @@ export function EntregasScreen() {
         `A entrega #${id} foi excluída com sucesso.`,
       );
     } catch (error) {
-      console.error("[ENTREGAS] Erro ao excluir:", error);
-
       Alert.alert(
         "Erro ao excluir",
         "Não foi possível excluir a entrega. Tente novamente.",

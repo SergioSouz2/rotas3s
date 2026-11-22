@@ -8,7 +8,6 @@ export async function initializeLocalUser() {
     .limit(1);
 
   if (usuariosExistentes.length > 0) {
-    console.log("[DATABASE] Usuário local já existe.");
     return;
   }
 
@@ -18,6 +17,4 @@ export async function initializeLocalUser() {
     telefone: "",
     criadoEm: new Date().toISOString(),
   });
-
-  console.log("[DATABASE] Usuário local criado.");
 }

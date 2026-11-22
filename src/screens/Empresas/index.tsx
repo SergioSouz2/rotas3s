@@ -51,8 +51,6 @@ export function EmpresasScreen() {
 
       setEmpresas(resultado);
     } catch (error) {
-      console.error("Erro ao carregar empresas:", error);
-
       setErro("Não foi possível carregar as empresas cadastradas.");
     } finally {
       setCarregando(false);

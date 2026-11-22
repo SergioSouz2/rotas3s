@@ -21,7 +21,6 @@ export function useUsuario() {
 
       setUsuario(usuarios[0] ?? null);
     } catch (error) {
-      console.error("[USUARIO] Erro ao carregar:", error);
       setErro("Não foi possível carregar o usuário.");
     } finally {
       setCarregando(false);

@@ -372,8 +372,6 @@ export function useCadastroEmpresa() {
         },
       ]);
     } catch (erro) {
-      console.error("Erro ao salvar empresa:", erro);
-
       const mensagem = erro instanceof Error ? erro.message : "";
 
       const duplicado =

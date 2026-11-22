@@ -109,8 +109,6 @@ export default function MapaScreen() {
           ),
         );
       } catch (error) {
-        console.error("[MAPA] Erro ao carregar entregas:", error);
-
         if (ativo) {
           setErro("Não foi possível carregar as entregas.");
 

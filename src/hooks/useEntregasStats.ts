@@ -52,15 +52,7 @@ export function useEntregasStats(diaTrabalhoId: number | undefined) {
         realizadas,
         pendentes,
       });
-
-      console.log("[HOME] Estatísticas atualizadas:", {
-        total: entregas.length,
-        realizadas,
-        pendentes,
-      });
     } catch (error) {
-      console.error("[ENTREGAS] Erro ao carregar estatísticas:", error);
-
       setErro("Não foi possível carregar as estatísticas das entregas.");
     } finally {
       setCarregando(false);

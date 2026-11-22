@@ -57,8 +57,6 @@ export function NextDeliveryCard({
     try {
       await Linking.openURL(url);
     } catch (error) {
-      console.error("[WAZE] Erro ao abrir rota:", error);
-
       Alert.alert(
         "Erro ao abrir Waze",
         "Não foi possível abrir a navegação para esta empresa.",

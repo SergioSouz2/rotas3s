@@ -17,8 +17,6 @@ export async function resetDatabase(confirmacao: "RESETAR_TODOS_OS_DADOS") {
   }
 
   try {
-    console.log("[DATABASE] Iniciando reset total...");
-
     await db.transaction(async (tx) => {
       // 1. Apagar entregas
       await tx.delete(entregas);
@@ -32,11 +30,7 @@ export async function resetDatabase(confirmacao: "RESETAR_TODOS_OS_DADOS") {
       // 4. Apagar usuários
       await tx.delete(usuarios);
     });
-
-    console.log("[DATABASE] Banco de dados limpo com sucesso.");
   } catch (error) {
-    console.error("[DATABASE] Erro ao resetar banco:", error);
-
     throw error;
   }
 }

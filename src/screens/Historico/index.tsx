@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    RefreshControl,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { diaTrabalhoRepository } from "@/database/repositories/diaTrabalhoRepository";
@@ -146,7 +146,6 @@ export default function HistoricoScreen() {
       setTurnos(turnosFinalizados);
       setEntregas(entregasHistoricas);
     } catch (error) {
-      console.error("[HISTORICO] Erro ao carregar:", error);
       setErro("Não foi possível carregar o histórico.");
     } finally {
       setCarregando(false);

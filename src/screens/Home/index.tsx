@@ -259,8 +259,6 @@ export function HomeScreen() {
             throw new Error("LOCALIZACAO_GPS_INVALIDA");
           }
 
-          console.log("[HOME] Calculando rota a partir do GPS:", origem);
-
           // 6. Otimiza todas as entregas restantes.
           const timeout = setTimeout(() => {
             controlador.abort();
@@ -304,20 +302,8 @@ export function HomeScreen() {
           setProximaEntrega(entregaSelecionada);
 
           setTempoEstimado(resultado.duracaoSegundos);
-
-          console.log(
-            "[HOME] Próxima entrega otimizada:",
-            entregaSelecionada.empresa,
-          );
-
-          console.log(
-            "[HOME] Ordem otimizada:",
-            resultado.paradas.map((parada) => parada.empresa),
-          );
         } catch (error) {
           if (!ativo) return;
-
-          console.error("[HOME] Erro ao otimizar próxima entrega:", error);
 
           setProximaEntrega(null);
 

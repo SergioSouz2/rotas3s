@@ -289,8 +289,6 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
 
         assinatura = novaAssinatura;
       } catch (error) {
-        console.error("[MAPA] Erro ao iniciar GPS:", error);
-
         if (ativo) {
           Alert.alert(
             "Erro no GPS",
@@ -416,8 +414,6 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
         const aindaAtual = montadoRef.current && consultaRef.current?.id === id;
 
         if (!aindaAtual) return;
-
-        console.error("[MAPA] Falha na otimização:", error);
 
         setErroRota(
           tempoEsgotado

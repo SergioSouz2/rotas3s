@@ -106,8 +106,6 @@ export function EmpresaDetalhesScreen() {
           setEmpresa(resultado);
         }
       } catch (erro) {
-        console.error("Erro ao buscar empresa:", erro);
-
         if (ativo) {
           Alert.alert("Erro", "Não foi possível carregar os dados da empresa.");
         }

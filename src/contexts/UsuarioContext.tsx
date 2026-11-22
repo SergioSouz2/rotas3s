@@ -33,12 +33,8 @@ export function UsuarioProvider({ children }: { children: ReactNode }) {
 
       const usuarios = await usuarioRepository.findAll();
 
-      console.log("[USUARIO] Total de usuários:", usuarios.length);
-
       setUsuario(usuarios[0] ?? null);
     } catch (error) {
-      console.error("[USUARIO] Erro ao carregar usuário:", error);
-
       setErro("Não foi possível carregar o perfil.");
     } finally {
       setCarregando(false);

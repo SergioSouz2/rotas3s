@@ -56,8 +56,6 @@ export function useJornada(usuarioId: number | undefined) {
 
       setDiaTrabalho(jornadaHoje);
     } catch (error) {
-      console.error("[JORNADA] Erro ao carregar:", error);
-
       setErro("Não foi possível carregar a jornada.");
     } finally {
       setCarregando(false);
@@ -113,8 +111,6 @@ export function useJornada(usuarioId: number | undefined) {
 
       setDiaTrabalho(jornada);
     } catch (error) {
-      console.error("[JORNADA] Erro ao iniciar:", error);
-
       setErro("Não foi possível iniciar a jornada.");
     } finally {
       operacaoEmAndamento.current = false;
@@ -145,8 +141,6 @@ export function useJornada(usuarioId: number | undefined) {
 
       setDiaTrabalho(jornada);
     } catch (error) {
-      console.error("[JORNADA] Erro ao finalizar:", error);
-
       setErro("Não foi possível finalizar a jornada.");
 
       await recarregar();
