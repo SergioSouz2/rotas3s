@@ -15,9 +15,7 @@
       "package": "com.sergio3s.rotas",
       "adaptiveIcon": {
         "backgroundColor": "#001533",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -51,7 +49,16 @@
           "locationWhenInUsePermission": "O 3S Rotas utiliza sua localização para confirmar e corrigir pontos de entrega."
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
