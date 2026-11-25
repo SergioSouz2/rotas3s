@@ -12,6 +12,7 @@ import {
 
 import HistoricoEntregas from "@/components/historico/HistoricoEntregas";
 import HistoricoTurnos from "@/components/historico/HistoricoTurnos";
+import { useJornadaContext } from "@/contexts/JornadaContext";
 
 import { diaTrabalhoRepository } from "@/database/repositories/diaTrabalhoRepository";
 import { entregaRepository } from "@/database/repositories/entregaRepository";
@@ -27,6 +28,7 @@ type Entrega = Awaited<
 >[number];
 
 export default function HistoricoScreen() {
+  const { diaTrabalho, carregando: carregandoJornada } = useJornadaContext();
   const [abaAtiva, setAbaAtiva] = useState<AbaHistorico>("entregas");
 
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -77,8 +79,8 @@ export default function HistoricoScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void carregarHistorico();
-    }, [carregarHistorico]),
+      if (!carregandoJornada) void carregarHistorico();
+    }, [carregarHistorico, carregandoJornada, diaTrabalho?.id, diaTrabalho?.status]),
   );
 
   return (

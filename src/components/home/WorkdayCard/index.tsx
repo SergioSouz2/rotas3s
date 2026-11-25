@@ -101,7 +101,7 @@ export function WorkdayCard({
             {processando ? (
               <ActivityIndicator color={colors.textInverse} size="small" />
             ) : (
-              <Text style={styles.buttonText}>Iniciar jornada</Text>
+              <Text style={styles.buttonText}>Iniciar turno</Text>
             )}
           </Pressable>
         )}
@@ -119,7 +119,7 @@ export function WorkdayCard({
             {processando ? (
               <ActivityIndicator color={colors.textInverse} size="small" />
             ) : (
-              <Text style={styles.buttonText}>Finalizar</Text>
+              <Text style={styles.buttonText}>Finalizar turno</Text>
             )}
           </Pressable>
         )}

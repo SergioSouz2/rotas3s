@@ -1,3 +1,4 @@
+import { JornadaProvider } from "@/contexts/JornadaContext";
 import { SelecaoEntregasProvider } from "@/contexts/SelecaoEntregasContext";
 import { UsuarioProvider, useUsuarioContext } from "@/contexts/UsuarioContext";
 import { DatabaseInitializer } from "@/database/DatabaseInitializer";
@@ -138,9 +139,11 @@ export default function RootLayout() {
 
           <DatabaseInitializer>
             <UsuarioProvider>
-              <SelecaoEntregasProvider>
-                <NavegacaoPrincipal />
-              </SelecaoEntregasProvider>
+              <JornadaProvider>
+                <SelecaoEntregasProvider>
+                  <NavegacaoPrincipal />
+                </SelecaoEntregasProvider>
+              </JornadaProvider>
             </UsuarioProvider>
           </DatabaseInitializer>
         </NavigationThemeProvider>

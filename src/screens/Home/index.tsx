@@ -443,7 +443,7 @@ export function HomeScreen() {
             onRegistrarEntrega={() => router.push("/entregas/nova")}
             onVerEntregas={() => router.push("/(tab)/entregas")}
             onVerRota={() => router.push("/mapa")}
-            onFinalizarTurno={finalizarJornada}
+            onFinalizarTurno={processando ? undefined : finalizarJornada}
           />
         </View>
       </ScrollView>

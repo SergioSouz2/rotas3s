@@ -1,34 +1,30 @@
 import { useCallback } from "react";
 
-import { useJornada } from "./useJornada";
-import { useUsuario } from "./useUsuario";
+import { useJornadaContext } from "@/contexts/JornadaContext";
+import { useUsuarioContext } from "@/contexts/UsuarioContext";
 
 export function useHomeData() {
-  const usuarioHook = useUsuario();
+  const { usuario, carregando, erro, recarregarUsuario } = useUsuarioContext();
 
-  const jornadaHook = useJornada(usuarioHook.usuario?.id);
+  const jornadaHook = useJornadaContext();
+  const recarregarJornada = jornadaHook.recarregar;
 
   // Recarrega os dados utilizados na Home
   const recarregar = useCallback(async () => {
-    await usuarioHook.recarregar();
-    await jornadaHook.recarregar();
-  }, [usuarioHook.recarregar, jornadaHook.recarregar]);
-
-  // Recarrega especificamente os dados da jornada
-  const recarregarJornada = useCallback(async () => {
-    await jornadaHook.recarregar();
-  }, [jornadaHook.recarregar]);
+    await recarregarUsuario();
+    await recarregarJornada();
+  }, [recarregarUsuario, recarregarJornada]);
 
   return {
-    usuario: usuarioHook.usuario,
+    usuario,
 
     diaTrabalho: jornadaHook.diaTrabalho,
 
-    carregando: usuarioHook.carregando || jornadaHook.carregando,
+    carregando: carregando || jornadaHook.carregando,
 
     processando: jornadaHook.processando,
 
-    erro: usuarioHook.erro || jornadaHook.erro,
+    erro: erro || jornadaHook.erro,
 
     // Atualização completa
     recarregar,

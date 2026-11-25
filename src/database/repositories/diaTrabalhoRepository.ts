@@ -88,11 +88,11 @@ export const diaTrabalhoRepository = {
   },
 
   // Finalizar um dia de trabalho
-  async finalizar(id: number) {
+  async finalizar(id: number, fimEm = new Date().toISOString()) {
     const [dia] = await db
       .update(diasTrabalho)
       .set({
-        fimEm: new Date().toISOString(),
+        fimEm,
         status: "finalizado",
       })
       .where(and(eq(diasTrabalho.id, id), eq(diasTrabalho.status, "aberto")))

@@ -1,14 +1,12 @@
-import { diaTrabalhoRepository } from "@/database/repositories/diaTrabalhoRepository";
-
+﻿import { diaTrabalhoRepository } from "@/database/repositories/diaTrabalhoRepository";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState } from "react-native";
 
 type DiaTrabalho = NonNullable<
   Awaited<ReturnType<typeof diaTrabalhoRepository.findById>>
 >;
 
-function obterDataAtual(): string {
-  const hoje = new Date();
-
+function obterDataAtual(hoje = new Date()): string {
   return [
     hoje.getFullYear(),
     String(hoje.getMonth() + 1).padStart(2, "0"),
@@ -16,143 +14,172 @@ function obterDataAtual(): string {
   ].join("-");
 }
 
+function obterLimiteDoTurno(jornada: DiaTrabalho): number {
+  const inicio = jornada.inicioEm ? new Date(jornada.inicioEm) : null;
+  const limite = inicio
+    ? new Date(inicio.getTime())
+    : new Date(`${jornada.data}T00:00:00`);
+  limite.setHours(5, 30, 0, 0);
+
+  if (inicio && limite.getTime() <= inicio.getTime()) {
+    limite.setDate(limite.getDate() + 1);
+  }
+
+  return limite.getTime();
+}
+
+async function buscarJornadaAberta(usuarioId: number) {
+  let jornada = await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+
+  while (jornada) {
+    const limite = obterLimiteDoTurno(jornada);
+    if (Number.isNaN(limite) || limite > Date.now()) {
+      return jornada;
+    }
+
+    await diaTrabalhoRepository.finalizar(jornada.id, new Date(limite).toISOString());
+    jornada = await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+  }
+
+  return null;
+}
+
 export function useJornada(usuarioId: number | undefined) {
   const [diaTrabalho, setDiaTrabalho] = useState<DiaTrabalho | null>(null);
-
-  const [carregando, setCarregando] = useState(true);
-
+  const [usuarioCarregado, setUsuarioCarregado] = useState<number | undefined>();
   const [processando, setProcessando] = useState(false);
-
   const [erro, setErro] = useState<string | null>(null);
-
   const operacaoEmAndamento = useRef(false);
+  const leituraEmAndamento = useRef<Promise<void> | null>(null);
 
-  // Recuperar a jornada ativa ou a jornada de hoje
   const recarregar = useCallback(async () => {
     if (usuarioId === undefined) {
       setDiaTrabalho(null);
-      setCarregando(false);
+      setUsuarioCarregado(undefined);
       return;
     }
 
-    try {
-      setCarregando(true);
-      setErro(null);
+    if (operacaoEmAndamento.current) return;
+    if (leituraEmAndamento.current) return leituraEmAndamento.current;
 
-      // Prioridade: jornada que continua aberta
-      const jornadaAberta =
-        await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+    leituraEmAndamento.current = (async () => {
+      try {
+        const jornada =
+          (await buscarJornadaAberta(usuarioId)) ??
+          (await diaTrabalhoRepository.findByUsuarioAndData(usuarioId, obterDataAtual()));
 
-      if (jornadaAberta) {
-        setDiaTrabalho(jornadaAberta);
-        return;
+        setDiaTrabalho(jornada);
+        setErro(null);
+      } catch {
+        setErro("Não foi possível carregar a jornada.");
+      } finally {
+        leituraEmAndamento.current = null;
+        setUsuarioCarregado(usuarioId);
       }
+    })();
 
-      // Sem jornada aberta, consultar o dia atual
-      const jornadaHoje = await diaTrabalhoRepository.findByUsuarioAndData(
-        usuarioId,
-        obterDataAtual(),
-      );
-
-      setDiaTrabalho(jornadaHoje);
-    } catch (error) {
-      setErro("Não foi possível carregar a jornada.");
-    } finally {
-      setCarregando(false);
-    }
+    return leituraEmAndamento.current;
   }, [usuarioId]);
 
   useEffect(() => {
     void recarregar();
+
+    const assinatura = AppState.addEventListener("change", (estado) => {
+      if (estado === "active") void recarregar();
+    });
+
+    return () => assinatura.remove();
   }, [recarregar]);
 
-  // Iniciar jornada
-  const iniciarJornada = useCallback(async () => {
-    if (usuarioId === undefined || diaTrabalho || operacaoEmAndamento.current) {
-      return;
+  useEffect(() => {
+    if (!diaTrabalho) return;
+
+    const proximaMeiaNoite = new Date();
+    proximaMeiaNoite.setHours(24, 0, 0, 0);
+    const limite = diaTrabalho.status === "aberto"
+      ? obterLimiteDoTurno(diaTrabalho)
+      : proximaMeiaNoite.getTime();
+
+    if (Number.isNaN(limite)) return;
+
+    let ativo = true;
+    let timer = setTimeout(verificarTurno, Math.max(0, limite - Date.now()));
+
+    async function verificarTurno() {
+      await recarregar();
+      if (ativo) timer = setTimeout(verificarTurno, 30_000);
     }
+
+    return () => {
+      ativo = false;
+      clearTimeout(timer);
+    };
+  }, [diaTrabalho, recarregar]);
+
+  const iniciarJornada = useCallback(async () => {
+    if (usuarioId === undefined || operacaoEmAndamento.current) return;
 
     operacaoEmAndamento.current = true;
     setProcessando(true);
     setErro(null);
 
     try {
-      // Verificar se existe jornada aberta
-      const jornadaAberta =
-        await diaTrabalhoRepository.findAbertaByUsuarioId(usuarioId);
+      await leituraEmAndamento.current;
+      const jornadaAberta = await buscarJornadaAberta(usuarioId);
+      const inicio = new Date();
+      const data = obterDataAtual(inicio);
+      const existente = jornadaAberta ??
+        (await diaTrabalhoRepository.findByUsuarioAndData(usuarioId, data));
 
-      if (jornadaAberta) {
-        setDiaTrabalho(jornadaAberta);
-        return;
-      }
-
-      const dataAtual = obterDataAtual();
-
-      // Verificar se já existe jornada hoje
-      const existente = await diaTrabalhoRepository.findByUsuarioAndData(
+      const jornada = existente ?? await diaTrabalhoRepository.create({
         usuarioId,
-        dataAtual,
-      );
-
-      if (existente) {
-        setDiaTrabalho(existente);
-        return;
-      }
-
-      // Criar uma nova jornada
-      const jornada = await diaTrabalhoRepository.create({
-        usuarioId,
-        data: dataAtual,
-        inicioEm: new Date().toISOString(),
+        data,
+        inicioEm: inicio.toISOString(),
         fimEm: null,
         status: "aberto",
         observacoes: null,
       });
 
       setDiaTrabalho(jornada);
-    } catch (error) {
+    } catch {
       setErro("Não foi possível iniciar a jornada.");
     } finally {
       operacaoEmAndamento.current = false;
       setProcessando(false);
     }
-  }, [usuarioId, diaTrabalho]);
+  }, [usuarioId]);
 
-  // Finalizar jornada
   const finalizarJornada = useCallback(async () => {
-    if (
-      !diaTrabalho ||
-      diaTrabalho.status !== "aberto" ||
-      operacaoEmAndamento.current
-    ) {
+    if (!diaTrabalho || diaTrabalho.status !== "aberto" || operacaoEmAndamento.current) {
       return;
     }
+
+    const agora = Date.now();
+    const limite = obterLimiteDoTurno(diaTrabalho);
+    const fimEm = new Date(limite <= agora ? limite : agora).toISOString();
 
     operacaoEmAndamento.current = true;
     setProcessando(true);
     setErro(null);
 
     try {
-      const jornada = await diaTrabalhoRepository.finalizar(diaTrabalho.id);
-
-      if (!jornada) {
-        throw new Error("A jornada não está mais aberta.");
-      }
+      await leituraEmAndamento.current;
+      const jornada =
+        (await diaTrabalhoRepository.finalizar(diaTrabalho.id, fimEm)) ??
+        (await diaTrabalhoRepository.findById(diaTrabalho.id));
 
       setDiaTrabalho(jornada);
-    } catch (error) {
+    } catch {
       setErro("Não foi possível finalizar a jornada.");
-
-      await recarregar();
     } finally {
       operacaoEmAndamento.current = false;
       setProcessando(false);
     }
-  }, [diaTrabalho, recarregar]);
+  }, [diaTrabalho]);
 
   return {
     diaTrabalho,
-    carregando,
+    carregando: usuarioCarregado !== usuarioId,
     processando,
     erro,
     recarregar,
