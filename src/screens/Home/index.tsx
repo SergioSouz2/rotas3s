@@ -180,6 +180,7 @@ export function HomeScreen() {
             entregasRestantes.map(async (entrega) => {
               const empresa = await empresaRepository.findById(
                 entrega.empresaId,
+                { incluirExcluidas: true },
               );
 
               const latitude = entrega.latitude ?? empresa?.latitude;

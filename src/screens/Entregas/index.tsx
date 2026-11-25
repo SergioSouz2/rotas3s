@@ -72,7 +72,9 @@ export function EntregasScreen() {
 
       const empresas = await Promise.all(
         idsEmpresas.map(async (empresaId) => {
-          const empresa = await empresaRepository.findById(empresaId);
+          const empresa = await empresaRepository.findById(empresaId, {
+            incluirExcluidas: true,
+          });
 
           return {
             id: empresaId,

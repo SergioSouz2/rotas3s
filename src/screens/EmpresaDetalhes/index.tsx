@@ -8,6 +8,7 @@ import {
   Linking,
   Modal,
   Pressable,
+  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -15,6 +16,7 @@ import {
 
 import { AppHeader } from "@/components/AppHeader";
 import { MapaLocalizacao } from "@/components/empresas/cadastro/MapaLocalizacao";
+import { useSelecaoEntregas } from "@/contexts/SelecaoEntregasContext";
 
 import { empresaRepository } from "@/database/repositories/empresaRepository";
 import type { Empresa } from "@/database/schema/empresas";
@@ -82,6 +84,8 @@ export function EmpresaDetalhesScreen() {
 
   const [empresa, setEmpresa] = useState<Empresa | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [excluindo, setExcluindo] = useState(false);
+  const { removerEmpresa } = useSelecaoEntregas();
 
   const [campoExpandido, setCampoExpandido] = useState<CampoExpandido | null>(
     null,
@@ -164,6 +168,34 @@ export function EmpresaDetalhesScreen() {
     }
   }
 
+  function confirmarExclusao(empresa: Empresa) {
+    Alert.alert(
+      "Excluir empresa?",
+      `"${empresa.nome}" será removida da lista de empresas e da seleção de novas entregas. As entregas já registradas serão mantidas.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            setExcluindo(true);
+            try {
+              await empresaRepository.delete(empresa.id);
+              removerEmpresa(empresa.id);
+
+              if (router.canGoBack()) router.back();
+              else router.replace("/(tab)/empresas");
+            } catch {
+              Alert.alert("Erro", "Não foi possível excluir a empresa. Tente novamente.");
+            } finally {
+              setExcluindo(false);
+            }
+          },
+        },
+      ],
+    );
+  }
+
   const header = (
     <AppHeader
       titulo="Detalhes da empresa"
@@ -204,7 +236,7 @@ export function EmpresaDetalhesScreen() {
     <View style={[styles.container, containerStyle]}>
       {header}
 
-      <View style={styles.conteudo}>
+      <ScrollView contentContainerStyle={styles.conteudo}>
         {/* Identificação da empresa */}
         <View style={styles.identificacao}>
           <View style={styles.iconeEmpresa}>
@@ -377,7 +409,19 @@ export function EmpresaDetalhesScreen() {
             color={colors.placeholder}
           />
         </TouchableOpacity>
-      </View>
+      </ScrollView>
+
+      <TouchableOpacity
+        accessibilityRole="button"
+        style={[styles.botaoExcluir, excluindo && styles.botaoDesabilitado]}
+        disabled={excluindo}
+        onPress={() => confirmarExclusao(empresa)}
+      >
+        <Ionicons name="trash-outline" size={20} color={colors.danger} />
+        <Text style={styles.textoExcluir}>
+          {excluindo ? "Excluindo..." : "Excluir empresa"}
+        </Text>
+      </TouchableOpacity>
 
       {/* Modal para visualizar informações completas */}
       <Modal

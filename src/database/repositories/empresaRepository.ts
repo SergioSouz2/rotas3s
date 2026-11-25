@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, isNull } from "drizzle-orm";
 
 import { db } from "../client";
 import { empresas, type NovaEmpresa } from "../schema/empresas";
@@ -10,34 +10,31 @@ type AtualizarEmpresa = Partial<
 type OrigemLocalizacao = NonNullable<NovaEmpresa["origemLocalizacao"]>;
 
 export const empresaRepository = {
-  // Cadastrar empresa
+  // Cadastrar empresa ou reativar um cadastro excluído com o mesmo CNPJ.
   async create(
     dados: Omit<NovaEmpresa, "id" | "criadoEm" | "atualizadoEm" | "deletedAt">,
   ) {
-    const cnpjLimpo = dados.cnpj.replace(/\D/g, "");
-
-    const [empresaExistente] = await db
-      .select({ id: empresas.id })
-      .from(empresas)
-      .where(eq(empresas.cnpj, cnpjLimpo))
-      .limit(1);
-
-    if (empresaExistente) {
-      throw new Error("CNPJ_JA_CADASTRADO");
-    }
-
+    const { cnpj, ...cadastro } = dados;
+    const cnpjLimpo = cnpj.replace(/\D/g, "");
     const agora = new Date().toISOString();
 
     const [empresa] = await db
       .insert(empresas)
       .values({
-        ...dados,
+        ...cadastro,
         cnpj: cnpjLimpo,
         criadoEm: agora,
         atualizadoEm: agora,
         deletedAt: null,
       })
+      .onConflictDoUpdate({
+        target: empresas.cnpj,
+        set: { ...cadastro, atualizadoEm: agora, deletedAt: null },
+        setWhere: isNotNull(empresas.deletedAt),
+      })
       .returning();
+
+    if (!empresa) throw new Error("CNPJ_JA_CADASTRADO");
 
     return empresa;
   },
@@ -52,11 +49,14 @@ export const empresaRepository = {
   },
 
   // Buscar empresa pelo ID
-  async findById(id: number) {
+  async findById(id: number, { incluirExcluidas = false } = {}) {
     const [empresa] = await db
       .select()
       .from(empresas)
-      .where(and(eq(empresas.id, id), isNull(empresas.deletedAt)))
+      .where(and(
+        eq(empresas.id, id),
+        incluirExcluidas ? undefined : isNull(empresas.deletedAt),
+      ))
       .limit(1);
 
     return empresa ?? null;

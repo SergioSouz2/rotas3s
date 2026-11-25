@@ -26,12 +26,28 @@ export function createStyles(theme: AppTheme) {
     },
 
     conteudo: {
-      flex: 1,
       paddingHorizontal: spacing.md,
       paddingTop: spacing.sm,
       paddingBottom: spacing.md,
       gap: 6,
-      minHeight: 0,
+    },
+
+    botaoExcluir: {
+      minHeight: 48,
+      marginHorizontal: spacing.md,
+      marginBottom: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.danger,
+      borderRadius: radius.md,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+
+    textoExcluir: {
+      color: colors.danger,
+      fontWeight: typography.weight.bold,
     },
 
     // Identificação da empresa

@@ -17,10 +17,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LocalizacaoSection } from "@/components/empresas/cadastro/LocalizacaoSection";
 
 import { empresaRepository } from "@/database/repositories/empresaRepository";
-import { entregaRepository } from "@/database/repositories/entregaRepository";
+import { entregaRepository, type LocalizacaoEditada } from "@/database/repositories/entregaRepository";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useHomeData } from "@/hooks/useHomeData";
-import { localizarPorGps, type Coordenadas } from "@/services/localizacaoService";
+import { localizarPorGps } from "@/services/localizacaoService";
 
 import { createStyles } from "./styles";
 
@@ -57,7 +57,7 @@ export function DetalheEntregaScreen() {
   const [erro, setErro] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
   const [observacao, setObservacao] = useState("");
-  const [coordenadasEditadas, setCoordenadasEditadas] = useState<Coordenadas | null>(null);
+  const [coordenadasEditadas, setCoordenadasEditadas] = useState<LocalizacaoEditada | null>(null);
   const [buscandoGps, setBuscandoGps] = useState(false);
   const [ajustandoMapa, setAjustandoMapa] = useState(false);
 
@@ -82,7 +82,9 @@ export function DetalheEntregaScreen() {
         return;
       }
 
-      const dadosEmpresa = await empresaRepository.findById(registro.empresaId);
+      const dadosEmpresa = await empresaRepository.findById(registro.empresaId, {
+        incluirExcluidas: true,
+      });
 
       setEntrega(registro);
       setEmpresa(dadosEmpresa);
@@ -121,7 +123,8 @@ export function DetalheEntregaScreen() {
   async function usarGps() {
     setBuscandoGps(true);
     try {
-      setCoordenadasEditadas(await localizarPorGps());
+      const coordenadasGps = await localizarPorGps();
+      setCoordenadasEditadas({ ...coordenadasGps, origem: "gps" });
     } catch (error) {
       Alert.alert(
         "Localização indisponível",
@@ -137,10 +140,11 @@ export function DetalheEntregaScreen() {
 
     setProcessando(true);
     try {
-      const atualizada = await entregaRepository.editarDetalhes(entrega.id, {
-        descricao: observacao.trim() || null,
-        ...coordenadasEditadas,
-      });
+      const atualizada = await entregaRepository.editarDetalhes(
+        entrega.id,
+        observacao.trim() || null,
+        coordenadasEditadas ?? undefined,
+      );
 
       if (!atualizada) {
         Alert.alert("Edição indisponível", "A entrega precisa pertencer a um turno aberto.");
@@ -549,12 +553,14 @@ export function DetalheEntregaScreen() {
             {editando && jornadaAberta && (
               <LocalizacaoSection
                 coordenadas={coordenadasEditadas ?? coordenadas}
-                origemLocalizacao={null}
+                origemLocalizacao={coordenadasEditadas?.origem ?? null}
                 buscandoLocalizacao={buscandoGps}
                 localizacaoNaoEncontrada={false}
                 mensagemSemLocalizacao="Use o GPS para definir o ponto de entrega"
                 onAtualizarLocalizacao={() => void usarGps()}
-                onConfirmarLocalizacaoManual={setCoordenadasEditadas}
+                onConfirmarLocalizacaoManual={(coordenadasManuais) =>
+                  setCoordenadasEditadas({ ...coordenadasManuais, origem: "manual" })
+                }
                 onModoEdicaoChange={setAjustandoMapa}
               />
             )}

@@ -68,7 +68,9 @@ export default function MapaScreen() {
 
         const resultados = await Promise.all(
           registros.map(async (entrega) => {
-            const empresa = await empresaRepository.findById(entrega.empresaId);
+            const empresa = await empresaRepository.findById(entrega.empresaId, {
+              incluirExcluidas: true,
+            });
 
             const latitude = entrega.latitude ?? empresa?.latitude;
 

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, exists } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNull } from "drizzle-orm";
 
 import { db } from "../client";
 import { diasTrabalho } from "../schema/diasTrabalho";
@@ -10,6 +10,12 @@ type NovaEntrega = typeof entregas.$inferInsert;
 type AtualizarEntrega = Partial<
   Omit<NovaEntrega, "id" | "diaTrabalhoId" | "empresaId">
 >;
+
+export type LocalizacaoEditada = {
+  latitude: number;
+  longitude: number;
+  origem: "gps" | "manual";
+};
 
 export const entregaRepository = {
   // Cadastrar uma entrega
@@ -46,7 +52,11 @@ export const entregaRepository = {
           latitude: empresas.latitude,
           longitude: empresas.longitude,
         })
-        .from(empresas);
+        .from(empresas)
+        .where(and(
+          inArray(empresas.id, empresasSelecionadas),
+          isNull(empresas.deletedAt),
+        ));
 
       const empresasPorId = new Map(
         empresasEncontradas.map((empresa) => [empresa.id, empresa]),
@@ -125,19 +135,47 @@ export const entregaRepository = {
 
   async editarDetalhes(
     id: number,
-    dados: Pick<AtualizarEntrega, "descricao" | "latitude" | "longitude">,
+    descricao: string | null,
+    localizacao?: LocalizacaoEditada,
   ) {
-    const jornadaAberta = db.select({ id: diasTrabalho.id }).from(diasTrabalho)
-      .where(and(
-        eq(diasTrabalho.id, entregas.diaTrabalhoId),
-        eq(diasTrabalho.status, "aberto"),
-      ));
+    return db.transaction((tx) => {
+      const jornadaAberta = tx
+        .select({ id: diasTrabalho.id })
+        .from(diasTrabalho)
+        .where(and(
+          eq(diasTrabalho.id, entregas.diaTrabalhoId),
+          eq(diasTrabalho.status, "aberto"),
+        ));
+      const coordenadas = localizacao
+        ? { latitude: localizacao.latitude, longitude: localizacao.longitude }
+        : undefined;
 
-    const [entrega] = await db.update(entregas).set(dados)
-      .where(and(eq(entregas.id, id), exists(jornadaAberta)))
-      .returning();
+      const entrega = tx
+        .update(entregas)
+        .set({ descricao, ...coordenadas })
+        .where(and(eq(entregas.id, id), exists(jornadaAberta)))
+        .returning()
+        .get();
 
-    return entrega ?? null;
+      if (entrega && localizacao) {
+        const agora = new Date().toISOString();
+        const empresa = tx
+          .update(empresas)
+          .set({
+            ...coordenadas,
+            origemLocalizacao: localizacao.origem,
+            localizacaoAtualizadaEm: agora,
+            atualizadoEm: agora,
+          })
+          .where(eq(empresas.id, entrega.empresaId))
+          .returning({ id: empresas.id })
+          .get();
+
+        if (!empresa) throw new Error("EMPRESA_NAO_ENCONTRADA");
+      }
+
+      return entrega ?? null;
+    });
   },
 
   // Etapa 1: Pendente -> Saiu para entrega
