@@ -98,6 +98,16 @@ export function createStyles(theme: AppTheme) {
       color: colors.text,
     },
 
+    campoObservacao: {
+      minHeight: 92,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      color: colors.text,
+      textAlignVertical: "top",
+    },
+
     textoSecundario: {
       fontSize: 13,
       lineHeight: 20,

@@ -165,25 +165,13 @@ export function SelecaoEntregasScreen() {
       setSalvando(true);
       Keyboard.dismiss();
 
-      const entregasCriadas = await entregaRepository.createMany(
+      await entregaRepository.createMany(
         diaTrabalho.id,
         empresasSelecionadas,
       );
 
       limparSelecao();
-
-      Alert.alert(
-        "Entregas registradas!",
-        `${entregasCriadas.length} entrega(s) adicionada(s) à jornada.`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              router.replace("/(tab)/entregas");
-            },
-          },
-        ],
-      );
+      router.replace("/mapa");
     } catch (error) {
       Alert.alert(
         "Erro ao salvar",

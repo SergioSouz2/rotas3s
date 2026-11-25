@@ -1,3 +1,5 @@
+import Storage from "expo-sqlite/kv-store";
+
 export type CoordenadasRota = {
   latitude: number;
   longitude: number;
@@ -15,6 +17,48 @@ export type ResultadoRota = {
   distanciaMetros: number;
   duracaoSegundos: number;
 };
+
+type RotaSalva = { chave: string; resultado: ResultadoRota };
+
+export function chaveDasParadas(paradas: ParadaRota[]): string {
+  return JSON.stringify(
+    [...paradas].sort((a, b) => a.id - b.id)
+      .map(({ id, latitude, longitude }) => [id, latitude, longitude]),
+  );
+}
+
+export async function lerRotaSalva(
+  jornadaId: number,
+  chave: string,
+): Promise<ResultadoRota | null> {
+  try {
+    const valor = await Storage.getItemAsync(`rota-jornada:${jornadaId}`);
+    if (!valor) return null;
+
+    const salva = JSON.parse(valor) as RotaSalva;
+    return salva.chave === chave ? salva.resultado : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function calcularESalvarRota(
+  jornadaId: number,
+  origem: CoordenadasRota,
+  paradas: ParadaRota[],
+  signal: AbortSignal,
+): Promise<ResultadoRota> {
+  const resultado = await roteirizacaoService.otimizar(origem, paradas, signal);
+  if (!signal.aborted) {
+    const salva: RotaSalva = { chave: chaveDasParadas(paradas), resultado };
+    try {
+      await Storage.setItemAsync(`rota-jornada:${jornadaId}`, JSON.stringify(salva));
+    } catch (erro) {
+      console.warn("Não foi possível guardar a rota no aparelho.", erro);
+    }
+  }
+  return resultado;
+}
 
 type WaypointOSRM = {
   waypoint_index: number;

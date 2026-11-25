@@ -9,15 +9,18 @@ import {
   Pressable,
   ScrollView,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LocalizacaoSection } from "@/components/empresas/cadastro/LocalizacaoSection";
 
 import { empresaRepository } from "@/database/repositories/empresaRepository";
 import { entregaRepository } from "@/database/repositories/entregaRepository";
 import { useAppTheme } from "@/hooks/useAppTheme";
 import { useHomeData } from "@/hooks/useHomeData";
+import { localizarPorGps, type Coordenadas } from "@/services/localizacaoService";
 
 import { createStyles } from "./styles";
 
@@ -52,6 +55,11 @@ export function DetalheEntregaScreen() {
   const [carregando, setCarregando] = useState(true);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [observacao, setObservacao] = useState("");
+  const [coordenadasEditadas, setCoordenadasEditadas] = useState<Coordenadas | null>(null);
+  const [buscandoGps, setBuscandoGps] = useState(false);
+  const [ajustandoMapa, setAjustandoMapa] = useState(false);
 
   const entregaId = Number(id);
 
@@ -95,6 +103,59 @@ export function DetalheEntregaScreen() {
   const jornadaAberta =
     diaTrabalho?.id === entrega?.diaTrabalhoId &&
     diaTrabalho?.status === "aberto";
+
+  const latitude = entrega?.latitude ?? empresa?.latitude;
+  const longitude = entrega?.longitude ?? empresa?.longitude;
+  const coordenadas = typeof latitude === "number" && typeof longitude === "number"
+    && Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? { latitude, longitude }
+    : null;
+
+  function iniciarEdicao() {
+    setObservacao(entrega?.descricao ?? "");
+    setCoordenadasEditadas(null);
+    setAjustandoMapa(false);
+    setEditando(true);
+  }
+
+  async function usarGps() {
+    setBuscandoGps(true);
+    try {
+      setCoordenadasEditadas(await localizarPorGps());
+    } catch (error) {
+      Alert.alert(
+        "Localização indisponível",
+        error instanceof Error ? error.message : "Não foi possível obter a localização.",
+      );
+    } finally {
+      setBuscandoGps(false);
+    }
+  }
+
+  async function salvarEdicao() {
+    if (!entrega || !jornadaAberta || processando || buscandoGps || ajustandoMapa) return;
+
+    setProcessando(true);
+    try {
+      const atualizada = await entregaRepository.editarDetalhes(entrega.id, {
+        descricao: observacao.trim() || null,
+        ...coordenadasEditadas,
+      });
+
+      if (!atualizada) {
+        Alert.alert("Edição indisponível", "A entrega precisa pertencer a um turno aberto.");
+        await recarregarJornada();
+        return;
+      }
+
+      setEntrega(atualizada);
+      setEditando(false);
+    } catch {
+      Alert.alert("Erro ao salvar", "Não foi possível salvar as alterações da entrega.");
+    } finally {
+      setProcessando(false);
+    }
+  }
 
   const statusAtual = entrega?.status ?? "pendente";
 
@@ -253,16 +314,7 @@ export function DetalheEntregaScreen() {
 
     const endereco = entrega.endereco || empresa?.endereco;
 
-    const latitude = empresa?.latitude;
-    const longitude = empresa?.longitude;
-
-    const possuiCoordenadas =
-      typeof latitude === "number" &&
-      typeof longitude === "number" &&
-      Number.isFinite(latitude) &&
-      Number.isFinite(longitude);
-
-    if (!possuiCoordenadas && !endereco) {
+    if (!coordenadas && !endereco) {
       Alert.alert(
         "Localização indisponível",
         "Esta entrega não possui endereço ou coordenadas.",
@@ -273,23 +325,23 @@ export function DetalheEntregaScreen() {
     let url: string;
 
     if (aplicativo === "google") {
-      const destino = possuiCoordenadas
-        ? `${latitude},${longitude}`
+      const destino = coordenadas
+        ? `${coordenadas.latitude},${coordenadas.longitude}`
         : endereco!;
 
       url =
         "https://www.google.com/maps/dir/?api=1&destination=" +
         encodeURIComponent(destino);
     } else {
-      if (!possuiCoordenadas) {
+      if (!coordenadas) {
         Alert.alert(
           "Coordenadas necessárias",
-          "Cadastre a localização da empresa para navegar pelo Waze.",
+          "Adicione a localização da entrega para navegar pelo Waze.",
         );
         return;
       }
 
-      url = `https://waze.com/ul?ll=${latitude},${longitude}` + "&navigate=yes";
+      url = `https://waze.com/ul?ll=${coordenadas.latitude},${coordenadas.longitude}&navigate=yes`;
     }
 
     try {
@@ -345,6 +397,8 @@ export function DetalheEntregaScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.conteudo}
+            keyboardShouldPersistTaps="handled"
+            scrollEnabled={!ajustandoMapa || !jornadaAberta}
           >
             {/* STATUS ATUAL */}
             <View style={styles.card}>
@@ -462,14 +516,48 @@ export function DetalheEntregaScreen() {
               </View>
             </View>
 
-            {/* OBSERVAÇÕES */}
-            {entrega.descricao ? (
-              <View style={styles.card}>
-                <Text style={styles.cardTitulo}>Observações</Text>
+            <View style={styles.card}>
+              <Text style={styles.cardTitulo}>Observação da entrega</Text>
+              {editando && jornadaAberta ? (
+                <TextInput
+                  accessibilityLabel="Observação da entrega"
+                  style={styles.campoObservacao}
+                  placeholder="Ex.: entrada pela portaria lateral"
+                  placeholderTextColor={colors.textSecondary}
+                  value={observacao}
+                  onChangeText={setObservacao}
+                  editable={!processando}
+                  multiline
+                />
+              ) : (
+                <>
+                  <Text style={styles.valor}>{entrega.descricao || "Sem observação"}</Text>
+                  {jornadaAberta && (
+                    <Pressable
+                      accessibilityRole="button"
+                      style={styles.botaoMapa}
+                      disabled={processando}
+                      onPress={iniciarEdicao}
+                    >
+                      <Text style={styles.botaoMapaTexto}>Editar entrega</Text>
+                    </Pressable>
+                  )}
+                </>
+              )}
+            </View>
 
-                <Text style={styles.valor}>{entrega.descricao}</Text>
-              </View>
-            ) : null}
+            {editando && jornadaAberta && (
+              <LocalizacaoSection
+                coordenadas={coordenadasEditadas ?? coordenadas}
+                origemLocalizacao={null}
+                buscandoLocalizacao={buscandoGps}
+                localizacaoNaoEncontrada={false}
+                mensagemSemLocalizacao="Use o GPS para definir o ponto de entrega"
+                onAtualizarLocalizacao={() => void usarGps()}
+                onConfirmarLocalizacaoManual={setCoordenadasEditadas}
+                onModoEdicaoChange={setAjustandoMapa}
+              />
+            )}
 
             {/* FINALIZAÇÃO */}
             {entrega.status === "realizada" && (
@@ -502,8 +590,37 @@ export function DetalheEntregaScreen() {
             )}
           </ScrollView>
 
+          {jornadaAberta && editando && !ajustandoMapa && (
+            <View style={[styles.rodape, { paddingBottom: insets.bottom + 16 }]}>
+              <View style={styles.acoesMapa}>
+                <Pressable
+                  accessibilityRole="button"
+                  style={styles.botaoMapa}
+                  disabled={processando || buscandoGps}
+                  onPress={() => setEditando(false)}
+                >
+                  <Text style={styles.botaoMapaTexto}>Cancelar</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  style={[
+                    styles.botaoPrincipal,
+                    styles.flex,
+                    (processando || buscandoGps) && styles.botaoDesabilitado,
+                  ]}
+                  disabled={processando || buscandoGps}
+                  onPress={() => void salvarEdicao()}
+                >
+                  <Text style={styles.botaoPrincipalTexto}>
+                    {processando ? "Salvando..." : "Salvar alterações"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
           {/* BOTÃO DE ALTERAÇÃO */}
-          {jornadaAberta &&
+          {jornadaAberta && !editando &&
             (entrega.status === "pendente" || entrega.status === "em_rota") && (
               <View
                 style={[

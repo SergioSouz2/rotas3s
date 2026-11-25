@@ -18,6 +18,7 @@ interface LocalizacaoSectionProps {
   origemLocalizacao: OrigemLocalizacao | null;
   buscandoLocalizacao: boolean;
   localizacaoNaoEncontrada: boolean;
+  mensagemSemLocalizacao?: string;
   onAtualizarLocalizacao: () => void;
   onConfirmarLocalizacaoManual: (coordenadas: Coordenadas) => void;
   onModoEdicaoChange?: (editando: boolean) => void;
@@ -27,6 +28,7 @@ export function LocalizacaoSection({
   coordenadas,
   buscandoLocalizacao,
   localizacaoNaoEncontrada,
+  mensagemSemLocalizacao,
   onAtualizarLocalizacao,
   onConfirmarLocalizacaoManual,
   onModoEdicaoChange,
@@ -178,7 +180,9 @@ export function LocalizacaoSection({
         <View style={styles.mapaPlaceholder}>
           <Ionicons name="map-outline" size={36} color={colors.textSecondary} />
 
-          <Text style={styles.mapaTexto}>Aguardando consulta do CNPJ</Text>
+          <Text style={styles.mapaTexto}>
+            {mensagemSemLocalizacao ?? "Aguardando consulta do CNPJ"}
+          </Text>
         </View>
       )}
 

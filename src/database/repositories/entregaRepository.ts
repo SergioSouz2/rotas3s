@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, exists } from "drizzle-orm";
 
 import { db } from "../client";
 import { diasTrabalho } from "../schema/diasTrabalho";
@@ -43,6 +43,8 @@ export const entregaRepository = {
         .select({
           id: empresas.id,
           endereco: empresas.endereco,
+          latitude: empresas.latitude,
+          longitude: empresas.longitude,
         })
         .from(empresas);
 
@@ -61,6 +63,8 @@ export const entregaRepository = {
           diaTrabalhoId,
           empresaId,
           endereco: empresa.endereco,
+          latitude: empresa.latitude,
+          longitude: empresa.longitude,
           status: "pendente",
         };
       });
@@ -114,6 +118,23 @@ export const entregaRepository = {
       .update(entregas)
       .set(dados)
       .where(eq(entregas.id, id))
+      .returning();
+
+    return entrega ?? null;
+  },
+
+  async editarDetalhes(
+    id: number,
+    dados: Pick<AtualizarEntrega, "descricao" | "latitude" | "longitude">,
+  ) {
+    const jornadaAberta = db.select({ id: diasTrabalho.id }).from(diasTrabalho)
+      .where(and(
+        eq(diasTrabalho.id, entregas.diaTrabalhoId),
+        eq(diasTrabalho.status, "aberto"),
+      ));
+
+    const [entrega] = await db.update(entregas).set(dados)
+      .where(and(eq(entregas.id, id), exists(jornadaAberta)))
       .returning();
 
     return entrega ?? null;

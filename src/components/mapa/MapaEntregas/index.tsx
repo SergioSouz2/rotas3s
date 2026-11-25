@@ -25,7 +25,9 @@ import {
 import { useAppTheme } from "@/hooks/useAppTheme";
 
 import {
-  roteirizacaoService,
+  calcularESalvarRota,
+  chaveDasParadas,
+  lerRotaSalva,
   type CoordenadasRota,
   type ResultadoRota,
 } from "@/services/roteirizacaoService";
@@ -52,7 +54,9 @@ export type PontoMapaEntrega = {
 };
 
 interface MapaEntregasProps {
+  jornadaId?: number;
   pontos: PontoMapaEntrega[];
+  onAbrirEntrega: (id: number) => void;
 }
 
 type ConsultaRota = {
@@ -108,7 +112,11 @@ function formatarCnpj(cnpj?: string | null): string {
   );
 }
 
-function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
+function MapaEntregasComponent({
+  jornadaId,
+  pontos,
+  onAbrirEntrega,
+}: MapaEntregasProps) {
   const theme = useAppTheme();
 
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -161,16 +169,20 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
     [pontos],
   );
 
-  const chaveParadas = useMemo(
-    () =>
-      pendentes
-        .map(
-          (ponto) =>
-            `${ponto.id}:${ponto.latitude}:${ponto.longitude}:${ponto.status}`,
-        )
-        .join("|"),
-    [pendentes],
-  );
+  const chaveParadas = useMemo(() => chaveDasParadas(pendentes), [pendentes]);
+
+  useEffect(() => {
+    let ativo = true;
+    setRota(null);
+
+    if (jornadaId !== undefined && chaveParadas !== "[]") {
+      void lerRotaSalva(jornadaId, chaveParadas).then((salva) => {
+        if (ativo && salva) setRota((atual) => atual ?? salva);
+      });
+    }
+
+    return () => { ativo = false; };
+  }, [jornadaId, chaveParadas]);
 
   const centroInicial = useMemo<[number, number]>(() => {
     if (pontos.length === 0) {
@@ -312,7 +324,7 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
 
   // Calcula a rota otimizada.
   useEffect(() => {
-    if (pendentes.length === 0) {
+    if (jornadaId === undefined || pendentes.length === 0) {
       consultaRef.current?.controlador.abort();
       consultaRef.current = null;
       ultimaConsultaRef.current = null;
@@ -328,6 +340,7 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
       return;
     }
 
+    const turnoId = jornadaId;
     const consultaAtual = consultaRef.current;
 
     if (consultaAtual) {
@@ -380,10 +393,6 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
       chave: chaveParadas,
     };
 
-    if (mudouParadas) {
-      setRota(null);
-    }
-
     setCarregandoRota(true);
     setErroRota(null);
 
@@ -396,7 +405,11 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
 
     async function executarConsulta() {
       try {
-        const resultado = await roteirizacaoService.otimizar(
+        const salva = mudouParadas && tentativaManual === 0
+          ? await lerRotaSalva(turnoId, chaveParadas)
+          : null;
+        const resultado = salva ?? await calcularESalvarRota(
+          turnoId,
           origem,
           paradasConsulta,
           controlador.signal,
@@ -435,7 +448,7 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
     }
 
     void executarConsulta();
-  }, [minhaLocalizacao, pendentes, chaveParadas, tentativaManual]);
+  }, [jornadaId, minhaLocalizacao, pendentes, chaveParadas, tentativaManual]);
 
   const geometriaRota = useMemo(() => {
     if (!rota || rota.coordenadas.length < 2) {
@@ -668,6 +681,15 @@ function MapaEntregasComponent({ pontos }: MapaEntregasProps) {
               >
                 CNPJ: {formatarCnpj(pontoSelecionado.cnpj)}
               </Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onAbrirEntrega(pontoSelecionado.id)}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <Text style={{ color: colors.primary, fontWeight: "700" }}>
+                  Abrir entrega
+                </Text>
+              </Pressable>
             </View>
 
             <Pressable

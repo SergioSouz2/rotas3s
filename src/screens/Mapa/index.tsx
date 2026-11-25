@@ -70,11 +70,13 @@ export default function MapaScreen() {
           registros.map(async (entrega) => {
             const empresa = await empresaRepository.findById(entrega.empresaId);
 
-            const latitude = Number(entrega.latitude ?? empresa?.latitude);
+            const latitude = entrega.latitude ?? empresa?.latitude;
 
-            const longitude = Number(entrega.longitude ?? empresa?.longitude);
+            const longitude = entrega.longitude ?? empresa?.longitude;
 
             if (
+              latitude == null ||
+              longitude == null ||
               !Number.isFinite(latitude) ||
               !Number.isFinite(longitude) ||
               latitude < -90 ||
@@ -102,6 +104,12 @@ export default function MapaScreen() {
         );
 
         if (!ativo) return;
+
+        if (resultados.some((ponto, indice) =>
+          ponto === null && ["pendente", "em_rota"].includes(registros[indice].status),
+        )) {
+          setErro("Há entregas sem localização. Abra a lista de entregas para definir o ponto.");
+        }
 
         setPontos(
           resultados.filter(
@@ -147,7 +155,13 @@ export default function MapaScreen() {
           </View>
         ) : (
           <>
-            <MapaEntregas pontos={pontos} />
+            <MapaEntregas
+              jornadaId={diaTrabalho?.status === "aberto" ? diaTrabalho.id : undefined}
+              pontos={pontos}
+              onAbrirEntrega={(id) =>
+                router.push({ pathname: "/entregas/[id]", params: { id: String(id) } })
+              }
+            />
 
             {erro && (
               <View

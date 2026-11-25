@@ -21,7 +21,9 @@ import { useEntregasStats } from "@/hooks/useEntregasStats";
 import { useHomeData } from "@/hooks/useHomeData";
 
 import {
-  roteirizacaoService,
+  calcularESalvarRota,
+  chaveDasParadas,
+  lerRotaSalva,
   type ParadaRota,
 } from "@/services/roteirizacaoService";
 
@@ -180,9 +182,9 @@ export function HomeScreen() {
                 entrega.empresaId,
               );
 
-              const latitude = Number(entrega.latitude ?? empresa?.latitude);
+              const latitude = entrega.latitude ?? empresa?.latitude;
 
-              const longitude = Number(entrega.longitude ?? empresa?.longitude);
+              const longitude = entrega.longitude ?? empresa?.longitude;
 
               const endereco =
                 entrega.endereco ||
@@ -192,7 +194,10 @@ export function HomeScreen() {
               const nomeEmpresa =
                 empresa?.nome ?? `Empresa #${entrega.empresaId}`;
 
-              if (!coordenadasValidas(latitude, longitude)) {
+              if (
+                latitude == null || longitude == null ||
+                !coordenadasValidas(latitude, longitude)
+              ) {
                 return null;
               }
 
@@ -229,51 +234,42 @@ export function HomeScreen() {
             return;
           }
 
-          // 4. Solicita permissão para utilizar
-          // a localização atual do motorista.
-          const permissao = await Location.requestForegroundPermissionsAsync();
-
+          let resultado = await lerRotaSalva(
+            diaTrabalho.id,
+            chaveDasParadas(entregasValidas),
+          );
           if (!ativo) return;
 
-          if (permissao.status !== "granted") {
-            setErroProxima(
-              "Autorize o GPS para identificar a próxima entrega otimizada.",
-            );
-            return;
-          }
+          if (!resultado) {
+            const permissao = await Location.requestForegroundPermissionsAsync();
+            if (!ativo) return;
 
-          // 5. Obtém a localização atual.
-          // Não utiliza uma coordenada fixa como origem.
-          const localizacao = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.High,
-          });
+            if (permissao.status !== "granted") {
+              setErroProxima("Autorize o GPS para identificar a próxima entrega otimizada.");
+              return;
+            }
 
-          if (!ativo) return;
+            const { coords } = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.High,
+            });
+            if (!ativo) return;
 
-          const origem = {
-            latitude: localizacao.coords.latitude,
-            longitude: localizacao.coords.longitude,
-          };
+            const origem = { latitude: coords.latitude, longitude: coords.longitude };
+            if (!coordenadasValidas(origem.latitude, origem.longitude)) {
+              throw new Error("LOCALIZACAO_GPS_INVALIDA");
+            }
 
-          if (!coordenadasValidas(origem.latitude, origem.longitude)) {
-            throw new Error("LOCALIZACAO_GPS_INVALIDA");
-          }
-
-          // 6. Otimiza todas as entregas restantes.
-          const timeout = setTimeout(() => {
-            controlador.abort();
-          }, TIMEOUT_OTIMIZACAO_MS);
-
-          let resultado;
-
-          try {
-            resultado = await roteirizacaoService.otimizar(
-              origem,
-              entregasValidas,
-              controlador.signal,
-            );
-          } finally {
-            clearTimeout(timeout);
+            const timeout = setTimeout(() => controlador.abort(), TIMEOUT_OTIMIZACAO_MS);
+            try {
+              resultado = await calcularESalvarRota(
+                diaTrabalho.id,
+                origem,
+                entregasValidas,
+                controlador.signal,
+              );
+            } finally {
+              clearTimeout(timeout);
+            }
           }
 
           if (!ativo || controlador.signal.aborted) {
